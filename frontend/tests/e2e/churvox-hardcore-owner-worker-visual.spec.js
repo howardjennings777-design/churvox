@@ -46,30 +46,54 @@ async function loginApi(page, email, password, label) {
   const paths = label === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
   const attempts = [];
   for (const path of paths) {
-    const response = await page.request.post(apiUrl(path), { data: { email, password }, timeout: 30_000 });
-    const body = await response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
-    attempts.push({ path, status: response.status(), body: JSON.stringify(body).slice(0, 180) });
-    if (!response.ok() || body?.success === false) continue;
-    const token = tokenFrom(body);
-    if (!token) continue;
-    const returnedEmail = accountEmail(body);
-    if (returnedEmail && returnedEmail !== email.toLowerCase()) throw new Error(`${label} login returned a different account.`);
-    TOKEN_CACHE.set(cacheKey, token);
-    await seedAuth(page, token, email, label);
-    return token;
+    for (let attempt = 1; attempt <= 6; attempt += 1) {
+      try {
+        const response = await page.request.post(apiUrl(path), { data: { email, password }, timeout: 60_000 });
+        const body = await response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
+        attempts.push({ path, attempt, status: response.status(), body: JSON.stringify(body).slice(0, 180) });
+        if (!response.ok() || body?.success === false) {
+          if (![408, 425, 429, 500, 502, 503, 504].includes(response.status())) break;
+        } else {
+          const token = tokenFrom(body);
+          if (token) {
+            const returnedEmail = accountEmail(body);
+            if (returnedEmail && returnedEmail !== email.toLowerCase()) throw new Error(`${label} login returned a different account.`);
+            TOKEN_CACHE.set(cacheKey, token);
+            await seedAuth(page, token, email, label);
+            return token;
+          }
+        }
+      } catch (error) {
+        attempts.push({ path, attempt, status: 'network', body: String(error?.message || error).slice(0, 180) });
+        if (attempt === 6) break;
+      }
+      if (attempt < 6) await new Promise((resolve) => setTimeout(resolve, Math.min(1200 * attempt, 6000)));
+    }
   }
   throw new Error(`${label} login failed: ${JSON.stringify(attempts)}`);
 }
 
 async function getJson(page, path, token) {
-  const response = await page.request.get(apiUrl(path), {
-    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    timeout: 30_000,
-  });
-  const text = await response.text();
-  let body = null;
-  try { body = JSON.parse(text); } catch {}
-  return { response, text, body, contentType: response.headers()['content-type'] || '' };
+  let lastError = null;
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    try {
+      const response = await page.request.get(apiUrl(path), {
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        timeout: 60_000,
+      });
+      const text = await response.text();
+      let body = null;
+      try { body = JSON.parse(text); } catch {}
+      if (response.ok() || ![408, 425, 429, 500, 502, 503, 504].includes(response.status()) || attempt === 6) {
+        return { response, text, body, contentType: response.headers()['content-type'] || '' };
+      }
+    } catch (error) {
+      lastError = error;
+      if (attempt === 6) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, Math.min(1200 * attempt, 6000)));
+  }
+  throw lastError || new Error(`GET ${path} produced no response`);
 }
 
 async function waitForSettledContent(page, path) {

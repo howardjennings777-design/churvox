@@ -7,9 +7,9 @@ const RUN_ID = String(process.env.GITHUB_RUN_ID || `local-${process.pid}`);
 const RUN_MARKER = `run-${RUN_ID}-`;
 const LEGACY_MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT |Full launch worker detail |STUDIO HUMAN /i;
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
-const REQUEST_TIMEOUT_MS = Math.max(4_000, Number(process.env.CHURVOX_CLEANUP_REQUEST_TIMEOUT_MS || 10_000));
-const MAX_ATTEMPTS = Math.max(1, Number(process.env.CHURVOX_CLEANUP_ATTEMPTS || 3));
-const DEADLINE_MS = Math.max(60_000, Number(process.env.CHURVOX_CLEANUP_DEADLINE_MS || 240_000));
+const REQUEST_TIMEOUT_MS = Math.max(15_000, Number(process.env.CHURVOX_CLEANUP_REQUEST_TIMEOUT_MS || 45_000));
+const MAX_ATTEMPTS = Math.max(3, Number(process.env.CHURVOX_CLEANUP_ATTEMPTS || 6));
+const DEADLINE_MS = Math.max(300_000, Number(process.env.CHURVOX_CLEANUP_DEADLINE_MS || 720_000));
 const STARTED_AT = Date.now();
 
 function log(message) {
@@ -205,7 +205,7 @@ async function main() {
   log(`Found ${businessMatches.length} active fixture record(s) created by run ${RUN_ID}.`);
   if (legacyBacklog) log(`Found ${legacyBacklog} older audit record(s); reported as legacy backlog and not mutated by this run.`);
 
-  await mapLimited(businessMatches, 3, async ({ kind, row }) => {
+  await mapLimited(businessMatches, 1, async ({ kind, row }) => {
     matched += 1;
     const id = idOf(row);
     if (!id) { failures.push(`${kind}:missing-id`); return; }
@@ -220,7 +220,7 @@ async function main() {
     log(`Command cleanup round ${round} found ${commandRows.length} exact-run slip(s).`);
     if (!commandRows.length) break;
     let progressed = 0;
-    await mapLimited(commandRows, 3, async (row) => {
+    await mapLimited(commandRows, 1, async (row) => {
       matched += 1;
       const id = idOf(row);
       if (await resolveCommandSlip(row, headers)) { progressed += 1; cleaned += 1; }

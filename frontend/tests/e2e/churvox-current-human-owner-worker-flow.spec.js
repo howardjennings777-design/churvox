@@ -58,7 +58,7 @@ async function apiLogin(request, email, password, label) {
 
 async function api(request, method, path, token, data) {
   let lastError;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
     try {
       const response = await request[method](apiUrl(path), {
         headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -66,10 +66,10 @@ async function api(request, method, path, token, data) {
         timeout: 60_000,
       });
       const body = await bodyOf(response);
-      if (response.ok() || ![429, 500, 502, 503, 504].includes(response.status()) || attempt === 3) return { response, body };
+      if (response.ok() || ![408, 425, 429, 500, 502, 503, 504].includes(response.status()) || attempt === 6) return { response, body };
     } catch (error) {
       lastError = error;
-      if (attempt === 3) throw error;
+      if (attempt === 6) throw error;
     }
     await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
   }
@@ -83,13 +83,12 @@ async function uiLogin(page, email, password, role) {
   await page.getByRole('button', { name: /open churvox|sign in|log in/i }).first().click();
   await expect.poll(() => page.url(), {
     message: `${role} stayed on login`,
-    timeout: 25_000,
+    timeout: 90_000,
     intervals: [300, 600, 1000, 1800, 3000],
   }).not.toMatch(/\/login(?:[?#]|$)/);
   const token = await page.evaluate(() => localStorage.getItem('token') || '');
   expect(token, `${role} login did not persist token`).toBeTruthy();
-  const me = await page.request.get(apiUrl('/api/auth/me'), { headers: { Authorization: `Bearer ${token}` }, timeout: 30_000 });
-  const body = await bodyOf(me);
+  const { response: me, body } = await api(page.request, 'get', '/api/auth/me', token);
   expect(me.status(), `${role} /api/auth/me failed: ${JSON.stringify(body).slice(0, 600)}`).toBe(200);
   expect(emailFrom(body), `${role} /api/auth/me returned wrong account`).toBe(email);
   return token;
@@ -107,8 +106,7 @@ async function seedVerifiedSession(page, token, email, role) {
     }));
   }, { tokenValue: token, emailValue: email, roleValue: role });
   await page.goto(`${BASE_URL}${role === 'worker' ? '/worker/today' : '/dashboard#today'}`, { waitUntil: 'domcontentloaded' });
-  const me = await page.request.get(apiUrl('/api/auth/me'), { headers: { Authorization: `Bearer ${token}` }, timeout: 30_000 });
-  const body = await bodyOf(me);
+  const { response: me, body } = await api(page.request, 'get', '/api/auth/me', token);
   expect(me.status(), `${role} seeded /api/auth/me failed: ${JSON.stringify(body).slice(0, 600)}`).toBe(200);
   expect(emailFrom(body), `${role} seeded /api/auth/me returned wrong account`).toBe(email);
 }

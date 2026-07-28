@@ -77,12 +77,22 @@ async function uiLogin(page, email, password, role) {
 
   const token = await page.evaluate(() => localStorage.getItem('token') || localStorage.getItem('authToken') || '');
   expect(token, `${role} browser login did not store a token`).toBeTruthy();
-  const me = await page.request.get(apiUrl('/api/auth/me'), {
-    headers: { Authorization: `Bearer ${token}` },
-    timeout: 30_000,
-  });
-  const body = await responseBody(me);
-  expect(me.status(), `${role} /api/auth/me failed: ${JSON.stringify(body).slice(0, 700)}`).toBe(200);
+  let me;
+  let body = {};
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    try {
+      me = await page.request.get(apiUrl('/api/auth/me'), {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 60_000,
+      });
+      body = await responseBody(me);
+      if (me.status() === 200 || ![408, 425, 429, 500, 502, 503, 504].includes(me.status()) || attempt === 6) break;
+    } catch (error) {
+      if (attempt === 6) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, Math.min(1200 * attempt, 6000)));
+  }
+  expect(me?.status(), `${role} /api/auth/me failed: ${JSON.stringify(body).slice(0, 700)}`).toBe(200);
   expect(accountEmail(body), `${role} /api/auth/me returned the wrong account`).toBe(email);
   return token;
 }
@@ -91,17 +101,17 @@ async function apiSession(page, email, password, role) {
   let response;
   let body = {};
   let lastError;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
     try {
       response = await page.request.post(apiUrl('/api/auth/login'), {
         data: { email, password },
         timeout: 60_000,
       });
       body = await responseBody(response);
-      if (response.ok() || ![429, 500, 502, 503, 504].includes(response.status()) || attempt === 3) break;
+      if (response.ok() || ![408, 425, 429, 500, 502, 503, 504].includes(response.status()) || attempt === 6) break;
     } catch (error) {
       lastError = error;
-      if (attempt === 3) throw error;
+      if (attempt === 6) throw error;
     }
     await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
   }
@@ -111,12 +121,22 @@ async function apiSession(page, email, password, role) {
   expect(token, `${role} API session login returned no token`).toBeTruthy();
   if (accountEmail(body)) expect(accountEmail(body), `${role} API session returned the wrong account`).toBe(email);
 
-  const me = await page.request.get(apiUrl('/api/auth/me'), {
-    headers: { Authorization: `Bearer ${token}` },
-    timeout: 30_000,
-  });
-  const meBody = await responseBody(me);
-  expect(me.status(), `${role} API session /api/auth/me failed: ${JSON.stringify(meBody).slice(0, 700)}`).toBe(200);
+  let me;
+  let meBody = {};
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    try {
+      me = await page.request.get(apiUrl('/api/auth/me'), {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 60_000,
+      });
+      meBody = await responseBody(me);
+      if (me.status() === 200 || ![408, 425, 429, 500, 502, 503, 504].includes(me.status()) || attempt === 6) break;
+    } catch (error) {
+      if (attempt === 6) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, Math.min(1200 * attempt, 6000)));
+  }
+  expect(me?.status(), `${role} API session /api/auth/me failed: ${JSON.stringify(meBody).slice(0, 700)}`).toBe(200);
   expect(accountEmail(meBody), `${role} API session /api/auth/me returned the wrong account`).toBe(email);
   const verifiedUser = meBody?.user || meBody?.data?.user || meBody?.data || meBody || {};
 

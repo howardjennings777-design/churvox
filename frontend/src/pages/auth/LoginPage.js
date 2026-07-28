@@ -12,7 +12,7 @@ import "./ChurvoxLoginPolish.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
-const LOGIN_TIMEOUT_MS = 28000;
+const LOGIN_TIMEOUT_MS = 180000;
 const ACCESS_REFRESH_TIMEOUT_MS = 30000;
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b";
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
@@ -58,22 +58,11 @@ function delay(ms) {
 }
 
 async function confirmFreshSession(checkAuth) {
-  let lastError = null;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      const user = await withTimeout(
-        checkAuth({ allowOfflineFallback: false }),
-        ACCESS_REFRESH_TIMEOUT_MS,
-        "Your session could not be confirmed. Please sign in again."
-      );
-      if (user) return user;
-      lastError = new Error("Your session could not be confirmed. Please sign in again.");
-    } catch (error) {
-      lastError = error;
-    }
-    if (attempt < 3) await delay(700 * attempt);
-  }
-  throw lastError || new Error("Your session could not be confirmed. Please sign in again.");
+  // checkAuth already retries transient /api/auth/me failures. Do not wrap that
+  // retrying request in another timeout/retry loop or concurrent checks race.
+  const user = await checkAuth({ allowOfflineFallback: false });
+  if (user) return user;
+  throw new Error("Your session could not be confirmed. Please sign in again.");
 }
 
 function rawRole(user = {}, payload = {}) {
@@ -143,7 +132,7 @@ function friendlyLoginError(error) {
   const status = error?.response?.status;
   const detail = String(error?.response?.data?.detail || error?.response?.data?.message || error?.message || "").trim();
   if (status === 429 || /too many/i.test(detail)) return "Too many failed attempts. Try again in 15 minutes.";
-  if (status === 503 || status === 504 || /unavailable|taking too long|did not respond/i.test(detail)) return "Churvox could not reach the login service. Please try again shortly.";
+  if ([408, 425, 502, 503, 504].includes(status) || /unavailable|gateway|taking too long|did not respond|timed out/i.test(detail)) return "Churvox could not reach the login service. Please try again shortly.";
   if (/session could not be confirmed/i.test(detail)) return "Your session could not be confirmed. Please sign in again.";
   if (status === 403 && /invite link/i.test(detail)) return detail;
   if (status === 403 && /disabled|revoked|locked/i.test(detail)) return "Account access is disabled. Contact Churvox support.";
@@ -185,7 +174,9 @@ export default function LoginPage() {
       try {
         freshUser = await confirmFreshSession(checkAuth);
       } catch {
-        try { await logout?.(); } catch {}
+        // logout clears browser auth synchronously. Do not hold the visible error
+        // behind a potentially slow network logout request during an outage.
+        try { void logout?.(); } catch {}
         throw new Error("Your session could not be confirmed. Please sign in again.");
       }
 

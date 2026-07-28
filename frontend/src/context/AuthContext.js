@@ -6,8 +6,8 @@ import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } f
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
-const AUTH_TIMEOUT_MS = 8000;
-const WORKER_AUTH_TIMEOUT_MS = 8000;
+const AUTH_TIMEOUT_MS = 30000;
+const WORKER_AUTH_TIMEOUT_MS = 30000;
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
 const AUTH_SNAPSHOT_KEY = "churvox_auth_session_snapshot_v1";
 const LOGGED_OUT_KEY = "churvox:logged-out";
@@ -191,10 +191,35 @@ function authError(data = {}) {
   return data?.detail || data?.message || data?.error || data?.data?.detail || data?.data?.message || "Invalid email or password.";
 }
 
+function isTransientAuthError(error) {
+  const status = error?.response?.status;
+  return !status || [408, 425, 429, 500, 502, 503, 504].includes(status);
+}
+
+function authDelay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function withTransientAuthRetry(operation, attempts = 4) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation(attempt);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientAuthError(error) || attempt === attempts) throw error;
+      await authDelay([700, 1400, 2500, 4000, 6000][attempt - 1] || 6000);
+    }
+  }
+  throw lastError || new Error("Authentication service unavailable.");
+}
+
 function shouldTryWorkerFallback(error) {
   const status = error?.response?.status;
-  if (!status) return true;
-  return [401, 404, 408, 422, 500, 502, 503, 504].includes(status);
+  // Worker fallback is for a real identity/route rejection only. A network or
+  // Render 5xx error must retry the same owner endpoint instead of pretending
+  // the user may be a worker.
+  return [401, 404, 422].includes(status);
 }
 
 function validStoredUser(user) {
@@ -325,7 +350,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const authRunRef = useRef(0);
 
-  const fetchMe = useCallback(async (token) => {
+  const fetchMe = useCallback(async (token) => withTransientAuthRetry(async () => {
     const response = await axios.get(`${API_BASE}/api/auth/me`, {
       headers: headersFor(token),
       withCredentials: true,
@@ -333,10 +358,14 @@ export function AuthProvider({ children }) {
     });
     const nextToken = tokenFrom(response.data) || token || "";
     const nextUser = userFrom(response.data);
-    if (!nextUser) throw new Error("No current user returned.");
+    if (!nextUser) {
+      const error = new Error("No current user returned.");
+      error.response = { status: 503 };
+      throw error;
+    }
     if (nextToken) nextUser.token = nextToken;
     return nextUser;
-  }, []);
+  }, 4), []);
 
   const checkAuth = useCallback(async ({ allowOfflineFallback = true } = {}) => {
     const runId = ++authRunRef.current;
@@ -437,11 +466,11 @@ export function AuthProvider({ children }) {
 
   async function workerLoginBridge(cleanEmail, password, originalError) {
     try {
-      const response = await axios.post(
+      const response = await withTransientAuthRetry(() => axios.post(
         `${API_BASE}/api/worker/auth/login`,
         { email: cleanEmail, password },
         { withCredentials: true, timeout: WORKER_AUTH_TIMEOUT_MS }
-      );
+      ), 5);
       if (response.data?.success === false) throw new Error(authError(response.data));
       return response;
     } catch (workerError) {
@@ -468,11 +497,11 @@ export function AuthProvider({ children }) {
 
     try {
       try {
-        response = await axios.post(
+        response = await withTransientAuthRetry(() => axios.post(
           `${API_BASE}/api/auth/login`,
           { email: cleanEmail, password },
           { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
-        );
+        ), 5);
       } catch (error) {
         normalLoginError = error;
         if (!shouldTryWorkerFallback(error)) throw error;

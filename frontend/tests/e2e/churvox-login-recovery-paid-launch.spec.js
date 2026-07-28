@@ -42,6 +42,7 @@ async function installLoginApi(page, options = {}) {
   const calls = [];
   let loggedIn = Boolean(options.initialUser);
   let currentUser = options.initialUser || null;
+  let loginFailures = Number(options.loginFailures || 0);
   let postLoginMeFailures = Number(options.postLoginMeFailures || 0);
   const failPostLoginMeAlways = Boolean(options.failPostLoginMeAlways);
 
@@ -62,6 +63,10 @@ async function installLoginApi(page, options = {}) {
     calls.push({ path, method: request.method(), payload });
 
     if (path === '/api/auth/login') {
+      if (loginFailures > 0) {
+        loginFailures -= 1;
+        return route.fulfill(json({ detail: 'Temporary Render service failure' }, 503));
+      }
       if (options.loginStatus) return route.fulfill(json(options.loginBody || { detail: 'Login failed' }, options.loginStatus));
       currentUser = options.loginUser || owner({ email: String(payload.email || '').toLowerCase() });
       loggedIn = true;
@@ -132,6 +137,18 @@ test.describe('Paid-launch login and recovery', () => {
     await expect.poll(() => page.url()).toMatch(/\/worker\/today/);
   });
 
+  test('owner login retries transient Render failures without worker fallback', async ({ page }) => {
+    const api = await installLoginApi(page, { loginFailures: 2 });
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await signIn(page);
+    await expect.poll(() => page.url(), {
+      timeout: 90_000,
+      intervals: [300, 600, 1000, 1800, 3000, 5000],
+    }).toMatch(/\/dashboard/);
+    expect(api.calls.filter((call) => call.path === '/api/auth/login').length).toBeGreaterThanOrEqual(3);
+    expect(api.calls.filter((call) => call.path === '/api/worker/auth/login')).toHaveLength(0);
+  });
+
   test('owner login service outage never calls worker login', async ({ page }) => {
     const api = await installLoginApi(page, {
       loginStatus: 503,
@@ -140,7 +157,7 @@ test.describe('Paid-launch login and recovery', () => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await signIn(page);
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole('alert')).toContainText(/restarting|temporarily unavailable|try again/i);
+    await expect(page.getByRole('alert')).toContainText(/restarting|temporarily unavailable|try again/i, { timeout: 20_000 });
     expect(api.calls.filter((call) => call.path === '/api/worker/auth/login')).toHaveLength(0);
   });
 
@@ -191,7 +208,12 @@ test.describe('Paid-launch login and recovery', () => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await signIn(page);
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole('alert')).toContainText(/session could not be confirmed/i, { timeout: 45_000 });
+    await expect.poll(async () => {
+      return (await page.locator('[role="alert"]').textContent().catch(() => '')) || '';
+    }, {
+      timeout: 120_000,
+      intervals: [300, 600, 1000, 1800, 3000, 5000],
+    }).toMatch(/session could not be confirmed/i);
   });
 
   test('friendly lockout message is shown', async ({ page }) => {
