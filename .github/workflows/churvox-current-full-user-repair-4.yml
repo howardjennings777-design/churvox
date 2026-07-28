@@ -29,44 +29,65 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Apply final live-session repair
-        run: python scripts/churvox_current_full_user_repair_4.py
-
-      - name: Verify exact repair anchors and permanent contract
+        id: apply
         shell: bash
         run: |
-          set -euo pipefail
-          node --check frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js
-          node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
-          node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
-          node --check frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js
-          grep -F 'const ACCESS_REFRESH_TIMEOUT_MS = 30000;' frontend/src/pages/auth/LoginPage.js
-          grep -F 'async function confirmFreshSession(checkAuth)' frontend/src/pages/auth/LoginPage.js
-          grep -F 'freshUser = await confirmFreshSession(checkAuth);' frontend/src/pages/auth/LoginPage.js
-          grep -F 'const API_TIMEOUT_MS = 30000;' frontend/src/hooks/useApi.js
-          grep -F "['payroll', /time|timesheet|hours|team status/i]" frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
-          grep -F "name: 'Create a record'" frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
-          grep -F "name: 'Create in Churvox'" frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
-          grep -F "['/dashboard#worker', /team|people|workers|field|worker/i]" frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js
-          grep -F 'churvox-current-full-user-repair-4-20260728' frontend/public/render-deploy-marker.txt
-          node scripts/churvox-hardcore-owner-worker-audit.cjs
+          set -o pipefail
+          python scripts/churvox_current_full_user_repair_4.py 2>&1 | tee /tmp/apply.log
+
+      - name: Verify exact repair anchors and permanent contract
+        id: verify
+        shell: bash
+        run: |
+          set -o pipefail
+          (
+            set -euo pipefail
+            node --check frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js
+            node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+            node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+            node --check frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js
+            grep -F 'const ACCESS_REFRESH_TIMEOUT_MS = 30000;' frontend/src/pages/auth/LoginPage.js
+            grep -F 'async function confirmFreshSession(checkAuth)' frontend/src/pages/auth/LoginPage.js
+            grep -F 'freshUser = await confirmFreshSession(checkAuth);' frontend/src/pages/auth/LoginPage.js
+            grep -F 'const API_TIMEOUT_MS = 30000;' frontend/src/hooks/useApi.js
+            grep -F "['payroll', /time|timesheet|hours|team status/i]" frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+            grep -F "name: 'Create a record'" frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+            grep -F "name: 'Create in Churvox'" frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+            grep -F "['/dashboard#worker', /team|people|workers|field|worker/i]" frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js
+            grep -F 'churvox-current-full-user-repair-4-20260728' frontend/public/render-deploy-marker.txt
+            node scripts/churvox-hardcore-owner-worker-audit.cjs
+          ) 2>&1 | tee /tmp/verify.log
 
       - name: Install and build production frontend
+        id: build
+        shell: bash
         run: |
-          npm --prefix frontend install --include=dev --legacy-peer-deps
-          npm --prefix frontend run build
+          set -o pipefail
+          (
+            set -euo pipefail
+            npm --prefix frontend install --include=dev --legacy-peer-deps
+            npm --prefix frontend run build
+          ) 2>&1 | tee /tmp/build.log
 
       - name: Run complete login and recovery browser contract
+        id: browser
         working-directory: frontend
+        shell: bash
         run: |
-          npx playwright install --with-deps chromium
-          npm start > /tmp/churvox-current-repair-4-server.txt 2>&1 &
-          for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:3000/login >/dev/null; then break; fi
-            sleep 2
-          done
-          PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npx playwright test tests/e2e/churvox-login-recovery-paid-launch.spec.js --project=desktop-chromium --workers=1 --reporter=line
+          set -o pipefail
+          (
+            set -euo pipefail
+            npx playwright install --with-deps chromium
+            npm start > /tmp/churvox-current-repair-4-server.txt 2>&1 &
+            for i in {1..60}; do
+              if curl -fsS http://127.0.0.1:3000/login >/dev/null; then break; fi
+              sleep 2
+            done
+            PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npx playwright test tests/e2e/churvox-login-recovery-paid-launch.spec.js --project=desktop-chromium --workers=1 --reporter=line
+          ) 2>&1 | tee /tmp/browser.log
 
       - name: Commit verified final live-session repair
+        id: commit
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
@@ -88,8 +109,25 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const outcomes = {
+              apply: '${{ steps.apply.outcome }}',
+              verify: '${{ steps.verify.outcome }}',
+              build: '${{ steps.build.outcome }}',
+              browser: '${{ steps.browser.outcome }}',
+              commit: '${{ steps.commit.outcome }}',
+            };
             const ok = '${{ job.status }}' === 'success';
-            const body = ok
-              ? 'Final live-session repair passed exact guards, permanent owner/worker contracts, the production build and the complete login/recovery browser suite. Resilient session confirmation, longer live API tolerance, current Create → Client flow and current Team/Time audit expectations were committed to main with fresh Render markers.'
-              : 'Final live-session repair stopped before commit because an exact guard, permanent contract, production build or login browser test failed. No partial product repair was pushed.';
+            let body;
+            if (ok) {
+              body = 'Final live-session repair passed exact guards, permanent owner/worker contracts, the production build and the complete login/recovery browser suite. Resilient session confirmation, longer live API tolerance, current Create → Client flow and current Team/Time audit expectations were committed to main with fresh Render markers.';
+            } else {
+              const order = [['apply','/tmp/apply.log'], ['verify','/tmp/verify.log'], ['build','/tmp/build.log'], ['browser','/tmp/browser.log']];
+              const failed = order.find(([name]) => outcomes[name] === 'failure');
+              let tail = '';
+              if (failed && fs.existsSync(failed[1])) {
+                tail = fs.readFileSync(failed[1], 'utf8').split('\n').slice(-45).join('\n').slice(-7000);
+              }
+              body = `Final live-session repair stopped before commit. Exact outcomes: ${JSON.stringify(outcomes)}. No partial product repair was pushed.${tail ? `\n\nFailed-stage log tail:\n\`\`\`text\n${tail}\n\`\`\`` : ''}`;
+            }
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
