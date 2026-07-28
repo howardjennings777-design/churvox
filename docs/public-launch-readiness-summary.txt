@@ -1,1 +1,0 @@
-Quote conversion merged. Public route deployment, legal fallbacks, structured data and regression gating prepared on agent/fix-public-launch-readiness-20260728.
