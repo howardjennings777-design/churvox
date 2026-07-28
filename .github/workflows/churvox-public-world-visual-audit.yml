@@ -12,7 +12,7 @@ jobs:
   audit:
     if: startsWith(github.event.issue.title, '[churvox-public-world-visual-audit]')
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -40,9 +40,35 @@ jobs:
           const out = '/tmp/churvox-public-audit/out';
           fs.mkdirSync(out,{recursive:true});
           const routes = [
-            ['home','/'],['product','/product'],['pricing','/pricing'],['demo','/demo'],['industry','/industries/landscaping'],
-            ['about','/about'],['security','/security'],['support','/support'],['billing','/refunds-cancellations'],['contact','/contact'],
-            ['login','/login'],['signup','/signup?plan=operator'],['privacy','/legal/privacy'],['terms','/legal/terms'],['request','/request']
+            ['home','/'],
+            ['product','/product/'],
+            ['features','/features/'],
+            ['pricing','/pricing/'],
+            ['demo','/demo/'],
+            ['about','/about/'],
+            ['security','/security/'],
+            ['support','/support/'],
+            ['billing','/refunds-cancellations/'],
+            ['contact','/contact/'],
+            ['login','/login/'],
+            ['signup','/signup/?plan=operator'],
+            ['forgot-password','/forgot-password'],
+            ['delete-account','/delete-account'],
+            ['privacy','/legal/privacy/'],
+            ['terms','/legal/terms/'],
+            ['request','/request'],
+            ['testers','/testers/'],
+            ['new-zealand','/industries/new-zealand/'],
+            ['australia','/industries/australia/'],
+            ['lawn-care','/industries/lawn-care/'],
+            ['landscaping','/industries/landscaping/'],
+            ['cleaning','/industries/cleaning/'],
+            ['property-maintenance','/industries/property-maintenance/'],
+            ['handyman','/industries/handyman/'],
+            ['painting','/industries/painting/'],
+            ['plumbing-electrical-hvac','/industries/plumbing-electrical-hvac/'],
+            ['pest-control','/industries/pest-control/'],
+            ['barber-hairdresser','/industries/barber-hairdresser/']
           ];
           const viewports = [['desktop',{width:1440,height:1000}],['phone',{width:390,height:844}]];
           const results=[]; const errors=[];
@@ -80,7 +106,7 @@ jobs:
             await browser.close();
             const duplicateGroups={}; for(const r of results){duplicateGroups[r.hash]=(duplicateGroups[r.hash]||[]).concat(`${r.device}/${r.name}`)}
             const duplicates=Object.values(duplicateGroups).filter(x=>x.length>1);
-            const summary={screens:results.length,statusFailures:results.filter(r=>r.status!==200).map(r=>`${r.device}/${r.name}:${r.status}`),overflow:results.filter(r=>r.horizontalOverflow>2).map(r=>`${r.device}/${r.name}:${r.horizontalOverflow}`),tiny:results.filter(r=>r.tinyControls.length).map(r=>`${r.device}/${r.name}`),blank:results.filter(r=>r.bodyTextLength<100).map(r=>`${r.device}/${r.name}`),runtimeErrors:errors,duplicateScreenshots:duplicates,rooms:[...new Set(results.map(r=>r.room).filter(Boolean))],headings:Object.fromEntries(results.filter(r=>r.device==='desktop').map(r=>[r.name,r.h1]))};
+            const summary={screens:results.length,publicRoutes:routes.length,statusFailures:results.filter(r=>r.status!==200).map(r=>`${r.device}/${r.name}:${r.status}`),overflow:results.filter(r=>r.horizontalOverflow>2).map(r=>`${r.device}/${r.name}:${r.horizontalOverflow}`),tiny:results.filter(r=>r.tinyControls.length).map(r=>`${r.device}/${r.name}`),blank:results.filter(r=>r.bodyTextLength<100).map(r=>`${r.device}/${r.name}`),runtimeErrors:errors,duplicateScreenshots:duplicates,rooms:[...new Set(results.map(r=>r.room).filter(Boolean))],headings:Object.fromEntries(results.filter(r=>r.device==='desktop').map(r=>[r.name,r.h1])),tokenisedPagesExcluded:['public quote','public invoice','proof pack','client portal because a valid private token is required']};
             fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(results,null,2));
             fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify(summary,null,2));
             console.log(JSON.stringify(summary,null,2));
@@ -105,5 +131,5 @@ jobs:
             const fs=require('fs');
             const file='/tmp/churvox-public-audit/out/summary.json';
             const summary=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{failure:'summary missing'};
-            const lines=['# Churvox public world visual audit','',`- Screens: ${summary.screens||0}`,`- HTTP failures: ${(summary.statusFailures||[]).length}`,`- Overflow pages: ${(summary.overflow||[]).length}`,`- Blank pages: ${(summary.blank||[]).length}`,`- Runtime errors: ${(summary.runtimeErrors||[]).length}`,`- Duplicate full-page screenshots: ${(summary.duplicateScreenshots||[]).length}`,`- Route identities found: ${(summary.rooms||[]).join(', ')||'none'}`,'', 'Desktop headings:', ...Object.entries(summary.headings||{}).map(([k,v])=>`- **${k}:** ${v}`),'',`Workflow run: \`${context.runId}\``,`Artifact: \`churvox-public-world-visual-audit\``];
+            const lines=['# Churvox public world visual audit','',`- Unique public routes: ${summary.publicRoutes||0}`,`- Screens: ${summary.screens||0}`,`- HTTP failures: ${(summary.statusFailures||[]).length}`,`- Overflow pages: ${(summary.overflow||[]).length}`,`- Blank pages: ${(summary.blank||[]).length}`,`- Runtime errors: ${(summary.runtimeErrors||[]).length}`,`- Duplicate full-page screenshots: ${(summary.duplicateScreenshots||[]).length}`,`- Route identities found: ${(summary.rooms||[]).join(', ')||'none'}`,'', 'Desktop headings:', ...Object.entries(summary.headings||{}).map(([k,v])=>`- **${k}:** ${v}`),'',`Tokenised pages not captured without a valid private token: ${(summary.tokenisedPagesExcluded||[]).join(', ')||'none'}`,'',`Workflow run: \`${context.runId}\``,`Artifact: \`churvox-public-world-visual-audit\``];
             await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:lines.join('\n')});
