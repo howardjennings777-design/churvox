@@ -92,6 +92,15 @@ def install(module):
         remove_route(app, path, "GET")
         app.add_api_route(path, endpoint, methods=["GET"])
 
+    try:
+        try:
+            import churvox_quote_convert_exact_patch as quote_convert_patch
+        except Exception:
+            from backend import churvox_quote_convert_exact_patch as quote_convert_patch
+        quote_convert_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox quote conversion install skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
