@@ -75,6 +75,7 @@ PATCH_MODULES = [
     "churvox_hq_growth_report_patch",
     "churvox_hq_connection_status_patch",
     "churvox_hq_unique_visitors_patch",
+    "churvox_conversion_funnel_patch",
     "churvox_hq_tester_status_patch",
     "churvox_tester_email_case_preserve_patch",
     "churvox_hq_tester_system_patch",
