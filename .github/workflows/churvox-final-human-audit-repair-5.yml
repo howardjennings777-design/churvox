@@ -124,3 +124,72 @@ jobs:
         with:
           script: |
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: 'Permission-safe final repair stopped before commit because a guarded verification failed. No partial product repair was pushed.' });
+
+  current-full-user-repair:
+    if: startsWith(github.event.issue.title, '[churvox-current-full-user-repair-v2]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply current exact-anchor repairs
+        run: python scripts/churvox_current_full_user_repair.py
+
+      - name: Verify current backend and audit contracts
+        run: |
+          set -euo pipefail
+          python -m py_compile backend/server/__init__.py backend/churvox_worker_command_visibility_patch.py
+          node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+          node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          grep -F "_install_launch_patch('churvox_worker_command_visibility_patch')" backend/server/__init__.py
+          grep -F 'if (!proofNames.length && !String(note || "").trim())' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -F 'cvWorkerJobsWorkspace' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -F 'aria-label="Create a record"' frontend/src/churvox-studio/ChurvoxStudioApp.jsx
+          grep -F 'min-height: 44px' frontend/src/churvox-studio/churvoxStudio.css
+          ! grep -F 'Jobs move into this lane automatically as their state changes.' frontend/src/churvox-studio/StudioPages.jsx
+          grep -F '/open churvox|sign in|log in/i' frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+          grep -F "getByRole('dialog', { name: /Create client/i })" frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          node scripts/churvox-hardcore-owner-worker-audit.cjs
+
+      - name: Install and build current production frontend
+        run: |
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+          npm --prefix frontend run build
+
+      - name: Commit current verified repairs
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            backend/server/__init__.py \
+            backend/RENDER_RESTART_20260615.txt \
+            frontend/public/render-deploy-marker.txt \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css \
+            frontend/src/churvox-studio/ChurvoxStudioApp.jsx \
+            frontend/src/churvox-studio/StudioPages.jsx \
+            frontend/src/churvox-studio/churvoxStudio.css \
+            frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
+            frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          git commit -m 'Repair current full owner worker user test'
+          git push origin HEAD:main
+
+      - name: Post current repair result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ job.status }}' === 'success';
+            const body = ok
+              ? 'Current exact-anchor full-user repairs passed the permanent owner/worker contract and production build, were committed to main, and updated both Render deployment markers.'
+              : 'Current exact-anchor full-user repair stopped before commit because a source anchor, permanent contract or production build failed. No partial repair was pushed.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
