@@ -8,6 +8,7 @@ on:
       - 'frontend/src/pages/marketing/PublicFeaturesPage.jsx'
       - 'frontend/src/pages/marketing/PublicFeaturesPage.css'
       - 'frontend/src/pages/marketing/ChurvoxPublicShell.jsx'
+      - 'frontend/src/pages/marketing/ChurvoxPublicContrastFixes.css'
       - 'frontend/tests/e2e/churvox-product-features-distinct.spec.js'
       - '.github/workflows/churvox-product-features-distinct.yml'
   workflow_dispatch:
