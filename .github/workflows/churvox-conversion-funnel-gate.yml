@@ -5,21 +5,25 @@ on:
     branches: [main]
     paths:
       - 'backend/churvox_conversion_funnel_patch.py'
+      - 'backend/churvox_conversion_funnel_exact_route_patch.py'
       - 'backend/churvox_startup_patch_loader.py'
       - 'backend/sitecustomize.py'
       - 'frontend/src/lib/platformTelemetry.js'
       - 'frontend/src/churvox-site-next/hqLiveData.js'
       - 'scripts/churvox_conversion_funnel_contract.py'
+      - 'scripts/churvox_conversion_funnel_exact_route_contract.py'
       - '.github/workflows/churvox-conversion-funnel-gate.yml'
   push:
     branches: [main]
     paths:
       - 'backend/churvox_conversion_funnel_patch.py'
+      - 'backend/churvox_conversion_funnel_exact_route_patch.py'
       - 'backend/churvox_startup_patch_loader.py'
       - 'backend/sitecustomize.py'
       - 'frontend/src/lib/platformTelemetry.js'
       - 'frontend/src/churvox-site-next/hqLiveData.js'
       - 'scripts/churvox_conversion_funnel_contract.py'
+      - 'scripts/churvox_conversion_funnel_exact_route_contract.py'
       - '.github/workflows/churvox-conversion-funnel-gate.yml'
   workflow_dispatch:
 
@@ -51,20 +55,27 @@ jobs:
       - name: Compile backend funnel
         run: |
           python -m py_compile backend/churvox_conversion_funnel_patch.py
+          python -m py_compile backend/churvox_conversion_funnel_exact_route_patch.py
           python -m py_compile backend/churvox_startup_patch_loader.py
           python -m py_compile backend/sitecustomize.py
           python -m py_compile scripts/churvox_conversion_funnel_contract.py
+          python -m py_compile scripts/churvox_conversion_funnel_exact_route_contract.py
 
       - name: Prove truthful funnel rules
         run: python scripts/churvox_conversion_funnel_contract.py
 
-      - name: Prove final startup loader installs the funnel
+      - name: Prove exact public event route
+        run: python scripts/churvox_conversion_funnel_exact_route_contract.py
+
+      - name: Prove final startup loader installs the funnel last
         run: |
           python - <<'PY'
           from backend import churvox_startup_patch_loader as loader
           assert 'churvox_conversion_funnel_patch' in loader.PATCH_MODULES
+          assert 'churvox_conversion_funnel_exact_route_patch' in loader.PATCH_MODULES
           assert loader.PATCH_MODULES.index('churvox_hq_unique_visitors_patch') < loader.PATCH_MODULES.index('churvox_conversion_funnel_patch')
-          print('Conversion funnel is installed by the final startup loader.')
+          assert loader.PATCH_MODULES[-1] == 'churvox_conversion_funnel_exact_route_patch'
+          print('Conversion funnel and exact public middleware are installed by the final startup loader.')
           PY
 
       - name: Prove login compatibility
@@ -87,6 +98,8 @@ jobs:
           grep -F 'Real conversion funnel live' frontend/src/churvox-site-next/hqLiveData.js
           grep -F 'churvox_conversion_funnel_patch' backend/sitecustomize.py
           grep -F '"churvox_conversion_funnel_patch"' backend/churvox_startup_patch_loader.py
+          grep -F '"churvox_conversion_funnel_exact_route_patch"' backend/churvox_startup_patch_loader.py
+          grep -F 'churvox_conversion_funnel_exact_route' backend/churvox_conversion_funnel_exact_route_patch.py
 
       - name: Upload compatibility evidence
         if: always()
