@@ -62,3 +62,114 @@ jobs:
         with:
           script: |
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: '```text\n' + (process.env.REPORT || 'Live repair proof did not produce a report.') + '\n```' });
+
+  login-diagnostic:
+    if: startsWith(github.event.issue.title, '[churvox-live-login-diagnostic]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install browser diagnostic dependencies
+        run: |
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+          cd frontend && npx playwright install --with-deps chromium
+
+      - name: Trace live owner login without exposing credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const { chromium } = require('./frontend/node_modules/playwright');
+          const base = 'https://www.churvox.com';
+          const email = process.env.CHURVOX_OWNER_EMAIL;
+          const password = process.env.CHURVOX_OWNER_PASSWORD;
+
+          function safeKeys(value) {
+            return value && typeof value === 'object' ? Object.keys(value).slice(0, 30).sort() : [];
+          }
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const context = await browser.newContext({ serviceWorkers: 'block' });
+            const page = await context.newPage();
+            const responses = [];
+            const failedRequests = [];
+            const consoleErrors = [];
+
+            page.on('response', async (response) => {
+              const path = new URL(response.url()).pathname;
+              if (!['/api/auth/login', '/api/auth/me', '/api/worker/auth/login'].includes(path)) return;
+              let body = {};
+              try { body = await response.json(); } catch {}
+              responses.push({
+                path,
+                status: response.status(),
+                ok: response.ok(),
+                keys: safeKeys(body),
+                userKeys: safeKeys(body?.user || body?.data?.user || body?.data),
+                hasToken: Boolean(body?.token || body?.access_token || body?.user?.token || body?.data?.token || body?.data?.user?.token),
+                detail: String(body?.detail || body?.message || body?.error || '').slice(0, 180),
+              });
+            });
+            page.on('requestfailed', (request) => {
+              const path = new URL(request.url()).pathname;
+              if (path.includes('/api/auth/')) failedRequests.push({ path, failure: request.failure()?.errorText || 'failed' });
+            });
+            page.on('console', (message) => {
+              if (message.type() === 'error') consoleErrors.push(message.text().slice(0, 300));
+            });
+
+            await page.goto(`${base}/login?diag=${Date.now()}`, { waitUntil: 'domcontentloaded' });
+            await page.getByLabel(/email/i).first().fill(email);
+            await page.getByLabel(/password/i).first().fill(password);
+            await page.getByRole('button', { name: /open churvox|sign in|log in/i }).first().click();
+            await page.waitForTimeout(22000);
+
+            const report = await page.evaluate(() => ({
+              url: location.href,
+              tokenPresent: Boolean(localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('access_token')),
+              logoutLock: Boolean(sessionStorage.getItem('churvox:logged-out')),
+              authState: window.__CHURVOX_AUTH_STATE__ || null,
+              alert: document.querySelector('[role="alert"]')?.textContent?.trim().slice(0, 300) || '',
+              status: document.querySelector('[role="status"]')?.textContent?.trim().slice(0, 300) || '',
+              submitText: document.querySelector('button[type="submit"]')?.textContent?.trim().slice(0, 100) || '',
+            }));
+
+            const output = {
+              ...report,
+              responses,
+              failedRequests,
+              consoleErrors: consoleErrors.slice(0, 10),
+            };
+            require('fs').writeFileSync('/tmp/login-diagnostic.json', JSON.stringify(output, null, 2));
+            console.log(JSON.stringify(output, null, 2));
+            await browser.close();
+          })().catch((error) => {
+            console.error(error?.stack || error);
+            process.exit(1);
+          });
+          NODE
+          {
+            echo 'REPORT<<EOF'
+            echo '```json'
+            cat /tmp/login-diagnostic.json
+            echo '```'
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+
+      - name: Post sanitized login trace
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: process.env.REPORT || 'Login diagnostic failed before producing a sanitized report.' });
