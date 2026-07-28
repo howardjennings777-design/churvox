@@ -1,0 +1,32 @@
+# Churvox private read-only staging service.
+# Branch: staging/churvox-office-os-preview-20260724
+#
+# This Blueprint creates one isolated frontend review service. It does not
+# replace or modify grassley-frontend, grassley-backend, www.churvox.com,
+# Stripe, MongoDB, Postmark, Xero, or production cron jobs.
+
+services:
+  - type: web
+    name: churvox-office-os-staging-20260724
+    runtime: node
+    plan: free
+    region: singapore
+    branch: staging/churvox-office-os-preview-20260724
+    rootDir: frontend
+    buildCommand: node --check server.staging.cjs && npm install --include=dev --legacy-peer-deps && npm run build
+    startCommand: node server.staging.cjs
+    autoDeployTrigger: commit
+    healthCheckPath: /__staging_health
+    buildFilter:
+      paths:
+        - frontend/**
+        - render.yaml
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: CHURVOX_STAGING_PASSWORD
+        sync: false
+      - key: CHURVOX_STAGING_INTERNAL_PORT
+        value: "3100"
