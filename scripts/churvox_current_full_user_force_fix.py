@@ -30,7 +30,7 @@ if source.count(ambiguous) != 1:
 source = source.replace(ambiguous, scoped, 1)
 
 stamp_anchor = '\nstamp = datetime.now(timezone.utc).isoformat()\n'
-extra = r'''
+extra = r"""
 login_page = "frontend/src/pages/auth/LoginPage.js"
 replace_once(
     login_page,
@@ -114,7 +114,7 @@ replace_once(
     }).toMatch(/session could not be confirmed/i);''',
     "wait for retry exhaustion while still requiring the visible session error",
 )
-'''
+"""
 if source.count(stamp_anchor) != 1:
     raise SystemExit(f"force-fix wrapper expected one stamp anchor, found {source.count(stamp_anchor)}")
 source = source.replace(stamp_anchor, f"\n{extra}{stamp_anchor}", 1)
