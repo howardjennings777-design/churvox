@@ -14,6 +14,11 @@ function expect(condition, message) {
   if (!condition) failures.push(message);
 }
 
+function parseableNodeScript(source) {
+  const withoutShebang = String(source || '').replace(/^#![^\n]*\n/, '');
+  new Function(withoutShebang);
+}
+
 const frontendPackage = JSON.parse(read('frontend/package.json'));
 const startup = read('frontend/scripts/start-production.cjs');
 const strengthener = read('frontend/scripts/strengthen-public-search-pages.cjs');
@@ -61,8 +66,8 @@ expect(
 );
 
 try {
-  new Function(startup);
-  new Function(strengthener);
+  parseableNodeScript(startup);
+  parseableNodeScript(strengthener);
 } catch (error) {
   failures.push(`public production scripts must parse: ${error.message}`);
 }
