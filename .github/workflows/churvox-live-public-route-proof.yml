@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Check Render and custom-domain public routes
+      - name: Check Render static route directories
         id: proof
         shell: bash
         run: |
@@ -55,18 +55,18 @@ jobs:
               echo '---'
             } >> "$REPORT"
 
-            if [ "$curl_code" -ne 0 ] || [ "$status" != '200' ] || [ "$token_count" -lt 1 ]; then
+            if [ "$curl_code" -ne 0 ] || [ "$status" != '200' ] || [ "$token_count" -lt 1 ] || [ "$static_marker" -lt 1 ]; then
               FAILURES=$((FAILURES + 1))
             fi
           }
 
           for host in 'https://grassley-frontend.onrender.com' 'https://www.churvox.com'; do
-            check_route "$host" '/product' 'The admin engine between the work and the owner.'
-            check_route "$host" '/pricing' 'NZ$299/month + GST'
-            check_route "$host" '/demo' 'Follow one service job from request to owner approval.'
-            check_route "$host" '/privacy' 'Churvox does not sell personal information.'
-            check_route "$host" '/terms' 'Terms of Service'
-            check_route "$host" '/refunds-cancellations' 'Refunds and cancellations in plain language.'
+            check_route "$host" '/product/' 'The admin engine between the work and the owner.'
+            check_route "$host" '/pricing/' 'NZ$299/month + GST'
+            check_route "$host" '/demo/' 'Follow one service job from request to owner approval.'
+            check_route "$host" '/privacy/' 'Churvox does not sell personal information.'
+            check_route "$host" '/terms/' 'Terms of Service'
+            check_route "$host" '/refunds-cancellations/' 'Refunds and cancellations in plain language.'
           done
 
           echo "FAILURES=$FAILURES" >> "$REPORT"
