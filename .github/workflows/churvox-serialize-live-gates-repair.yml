@@ -1,0 +1,76 @@
+name: Churvox one-use live gate serialization repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-serialize-live-gates-repair.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cancel sibling runs from this repair commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for run_id in $(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${GITHUB_SHA}&per_page=100" --jq '.workflow_runs[].id'); do
+            if [ "$run_id" != "$GITHUB_RUN_ID" ]; then
+              gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/cancel" || true
+            fi
+          done
+
+      - name: Serialize every heavy live-backend workflow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              '.github/workflows/churvox-product-readiness-gate.yml': 'churvox-product-readiness-${{ github.ref }}',
+              '.github/workflows/churvox-studio-human-everything.yml': 'churvox-studio-human-everything-${{ github.ref }}',
+              '.github/workflows/playwright-full-site.yml': 'churvox-full-site-${{ github.ref }}',
+              '.github/workflows/churvox-paid-launch-gate.yml': 'churvox-paid-launch-${{ github.ref }}',
+          }
+          for file_name, old_group in replacements.items():
+              path = Path(file_name)
+              text = path.read_text(encoding='utf-8')
+              old = f"concurrency:\n  group: {old_group}\n  cancel-in-progress: true"
+              new = (
+                  "concurrency:\n"
+                  "  # The live Render backend is limited to 512 MB. Queue all heavy live suites\n"
+                  "  # globally so browser tests cannot overload the customer service in parallel.\n"
+                  "  group: churvox-live-backend-tests\n"
+                  "  cancel-in-progress: false"
+              )
+              if old not in text:
+                  raise SystemExit(f'Expected concurrency block not found in {file_name}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+              print(f'Serialized {file_name}')
+          PY
+
+      - name: Verify the shared queue
+        run: |
+          set -euo pipefail
+          test "$(grep -R "group: churvox-live-backend-tests" .github/workflows/churvox-product-readiness-gate.yml .github/workflows/churvox-studio-human-everything.yml .github/workflows/playwright-full-site.yml .github/workflows/churvox-paid-launch-gate.yml | wc -l)" -eq 4
+          test "$(grep -R "cancel-in-progress: false" .github/workflows/churvox-product-readiness-gate.yml .github/workflows/churvox-studio-human-everything.yml .github/workflows/playwright-full-site.yml .github/workflows/churvox-paid-launch-gate.yml | wc -l)" -eq 4
+
+      - name: Remove this one-use workflow and commit repair
+        run: |
+          set -euo pipefail
+          rm .github/workflows/churvox-serialize-live-gates-repair.yml
+          git config user.name "churvox-release-bot"
+          git config user.email "hello@churvox.com"
+          git add .github/workflows
+          git commit -m "Serialize live backend tests to prevent Render OOM [skip ci]"
+          git push origin HEAD:main
