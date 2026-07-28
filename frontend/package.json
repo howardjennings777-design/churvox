@@ -56,8 +56,8 @@
     "zod": "^3.24.4"
   },
   "scripts": {
-    "start": "node server.cjs",
-    "build": "node scripts/churvox-worker-proof-singleton-contract.cjs && node scripts/generate-pwa-icons.cjs && craco build && node scripts/generate-public-search-pages.cjs",
+    "start": "node scripts/start-production.cjs",
+    "build": "node scripts/churvox-worker-proof-singleton-contract.cjs && node scripts/generate-pwa-icons.cjs && craco build && node scripts/generate-public-search-pages.cjs && node scripts/strengthen-public-search-pages.cjs",
     "green": "node scripts/churvox-green-machine.cjs",
     "green:deep": "CHURVOX_DEEP=1 node scripts/churvox-green-machine.cjs",
     "test:launch:gate": "node scripts/churvox-launch-gate.cjs",

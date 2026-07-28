@@ -1,0 +1,70 @@
+name: Churvox Public Launch Readiness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/package.json'
+      - 'frontend/scripts/start-production.cjs'
+      - 'frontend/scripts/generate-public-search-pages.cjs'
+      - 'frontend/scripts/strengthen-public-search-pages.cjs'
+      - 'frontend/server.cjs'
+      - 'scripts/churvox-public-production-route-contract.cjs'
+      - '.github/workflows/churvox-public-launch-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/package.json'
+      - 'frontend/scripts/start-production.cjs'
+      - 'frontend/scripts/generate-public-search-pages.cjs'
+      - 'frontend/scripts/strengthen-public-search-pages.cjs'
+      - 'frontend/server.cjs'
+      - 'scripts/churvox-public-production-route-contract.cjs'
+      - '.github/workflows/churvox-public-launch-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-public-launch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-launch:
+    name: Route-specific HTML, legal content and production startup
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Prove production route wiring
+        run: node scripts/churvox-public-production-route-contract.cjs
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build exact production frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Prove route-specific search and legal pages
+        run: |
+          grep -F 'Churvox product | Job admin prepared for owner approval' frontend/build/product/index.html
+          grep -F 'Churvox pricing | Start, Crew, Operator and Command plans' frontend/build/pricing/index.html
+          grep -F 'Churvox demo | See an owner-controlled job workflow' frontend/build/demo/index.html
+          grep -F 'data-churvox-public-static="/legal/privacy"' frontend/build/legal/privacy/index.html
+          grep -F 'Churvox does not sell personal information' frontend/build/privacy/index.html
+          grep -F 'data-churvox-public-static="/legal/terms"' frontend/build/legal/terms/index.html
+          grep -F 'NZ$299/month + GST' frontend/build/pricing/index.html
+          grep -F 'data-churvox-structured-data' frontend/build/product/index.html

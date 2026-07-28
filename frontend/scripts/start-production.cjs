@@ -13,6 +13,7 @@ if (!fs.existsSync(buildIndex)) {
 
 try {
   require('./generate-public-search-pages.cjs');
+  require('./strengthen-public-search-pages.cjs');
   console.log('CHURVOX_STARTUP_PUBLIC_ROUTES_READY');
 } catch (error) {
   console.error('CHURVOX_STARTUP_PUBLIC_ROUTE_REPAIR_FAILED', error);
