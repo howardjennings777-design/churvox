@@ -101,6 +101,18 @@ def install(module):
     except Exception as exc:
         print(f"Churvox quote conversion install skipped: {exc}", file=sys.stderr)
 
+    # Install after the generic record-delete middleware so PATCH /api/jobs/{id}
+    # and POST /api/jobs/{id}/assign are handled by the exact assignment guard
+    # before the legacy delete-only bypass can incorrectly return 405.
+    try:
+        try:
+            import churvox_job_assignment_exact_patch as job_assignment_patch
+        except Exception:
+            from backend import churvox_job_assignment_exact_patch as job_assignment_patch
+        job_assignment_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox exact job assignment install skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
