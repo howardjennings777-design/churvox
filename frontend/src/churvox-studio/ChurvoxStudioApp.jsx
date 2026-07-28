@@ -140,7 +140,7 @@ function StudioHeader({ page, go, access, user, logout, data, openSearch, openCr
         <div className="cvsBeamActions">
           <button type="button" onClick={openSearch} aria-label="Search"><Search size={18} /></button>
           <button type="button" onClick={openUpdates} aria-label="Updates" className={updateCount ? "has-count" : ""}><Bell size={18} />{updateCount ? <span>{updateCount}</span> : null}</button>
-          <button type="button" className="create" aria-label="Create a record" onClick={openCreate}><Plus size={18} /><span>Create</span></button>
+          <button type="button" className="create" aria-label="Create" onClick={openCreate}><Plus size={18} /><span>Create</span></button>
           <div className="cvsProfileWrap">
             <button type="button" className="profile" onClick={() => setProfileOpen((value) => !value)}><span>{initials(businessName)}</span><ChevronDown size={15} /></button>
             {profileOpen ? (
