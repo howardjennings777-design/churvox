@@ -1,1 +1,1 @@
-web: uvicorn server:app --host 0.0.0.0 --port ${PORT:-8080}
+web: MALLOC_ARENA_MAX=2 MALLOC_TRIM_THRESHOLD_=65536 uvicorn churvox_runtime:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1 --limit-concurrency 16 --backlog 64 --timeout-keep-alive 5
