@@ -126,6 +126,36 @@ async def main():
     stored = next(iter(db.platform_funnel_events.rows.values()))
     check(stored.get("event_count") == 2, "Repeated event did not increment event_count")
 
+    auxiliary_payload = {
+        "event": "demo_cta_clicked",
+        "visitor_id": "visitor-contract-2",
+        "path": "/",
+        "label": "View demo",
+        "href": "/demo",
+        "campaign": "contract-campaign",
+    }
+    auxiliary = await app.http_middleware(FakeRequest(exact.PATH, "POST", auxiliary_payload), downstream)
+    auxiliary_body = response_json(auxiliary)
+    check(auxiliary.status_code == 200, f"Supported interaction failed: {auxiliary.status_code} {auxiliary_body}")
+    auxiliary_row = next(row for row in db.platform_funnel_events.rows.values() if row.get("event") == "demo_cta_clicked")
+    check(auxiliary_row.get("label") == "View demo", "Interaction label was not retained")
+    check(auxiliary_row.get("campaign") == "contract-campaign", "Campaign context was not retained")
+
+    activation_payload = {
+        "event": "activation_client_present",
+        "visitor_id": "visitor-contract-3",
+        "path": "/dashboard#clients",
+        "record_type": "client",
+        "count": 4,
+    }
+    activation = await app.http_middleware(FakeRequest(exact.PATH, "POST", activation_payload), downstream)
+    activation_body = response_json(activation)
+    check(activation.status_code == 200, f"Activation alias failed: {activation.status_code} {activation_body}")
+    check(activation_body.get("event") == "first_client_created", "Client activation was not normalised")
+    check(activation_body.get("original_event") == "activation_client_present", "Activation source name was not retained")
+    activation_row = next(row for row in db.platform_funnel_events.rows.values() if row.get("event") == "first_client_created")
+    check(activation_row.get("count") == 4, "Activation record count was not retained")
+
     options = await app.http_middleware(FakeRequest(exact.PATH, "OPTIONS"), downstream)
     check(options.status_code == 200, "OPTIONS preflight was not handled")
     check("POST" in options.headers.get("access-control-allow-methods", ""), "POST was missing from CORS methods")
@@ -151,6 +181,9 @@ async def main():
             "production CORS",
             "deduplicated stage actors",
             "repeat count",
+            "supporting interaction events",
+            "activation aliases",
+            "safe event context",
             "OPTIONS preflight",
             "event allowlist",
             "platform owner exclusion",
