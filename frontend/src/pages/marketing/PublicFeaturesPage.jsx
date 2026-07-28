@@ -89,7 +89,7 @@ export default function PublicFeaturesPage() {
   }, []);
 
   return <main className="cp26Site cpWorld cpfSite" data-room="features" data-version="CHURVOX_DISTINCT_FEATURES_20260728">
-    <PublicNav active="/product/" />
+    <PublicNav active="/features/" />
 
     <section className="cpfHero">
       <div className="cpfHeroCopy">
