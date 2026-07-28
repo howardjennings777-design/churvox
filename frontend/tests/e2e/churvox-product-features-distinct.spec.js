@@ -37,8 +37,8 @@ test('Product and Features are genuinely different public pages', async ({ page 
 
 test('Features has working conversion and navigation paths', async ({ page }) => {
   await open(page, '/features/');
-  await expect(page.locator('a[href="/demo/"]').first()).toBeVisible();
-  await expect(page.locator('a[href="/signup/?plan=operator"]').first()).toBeVisible();
+  await expect(page.locator('.cpfActions a[href="/demo/"]')).toBeVisible();
+  await expect(page.locator('.cpfActions a[href="/signup/?plan=operator"]')).toBeVisible();
   await expect(page.locator('footer a[href="/product/"]')).toHaveText(/Product overview/i);
   await expect(page.locator('footer a[href="/features/"]')).toHaveText(/Features/i);
   await expect(page.locator('footer a[href="/pricing/"]')).toBeVisible();
