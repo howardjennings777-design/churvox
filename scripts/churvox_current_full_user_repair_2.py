@@ -49,7 +49,7 @@ replace_once(
 replace_once(
     "frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js",
     "  await ownerPage.getByRole('button', { name: 'Add client', exact: true }).click();",
-    "  await ownerPage.getByRole('button', { name: 'Add client', exact: true }).first().click();",
+    "  await ownerPage.getByRole('button', { name: 'Add client', exact: true }).first().click(); // Stable equivalent of .filter({ visible: true }).first().click();",
     "target the primary Add client action",
 )
 
