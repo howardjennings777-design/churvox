@@ -1,0 +1,98 @@
+name: Churvox live public route proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-live-public-route-proof]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check Render and custom-domain public routes
+        id: proof
+        shell: bash
+        run: |
+          set +e
+          REPORT="$RUNNER_TEMP/churvox-live-public-proof.txt"
+          FAILURES=0
+          : > "$REPORT"
+
+          check_route() {
+            host="$1"
+            route="$2"
+            token="$3"
+            safe=$(printf '%s-%s' "$host" "$route" | tr '/:.' '-')
+            body="$RUNNER_TEMP/${safe}.html"
+            headers="$RUNNER_TEMP/${safe}.headers"
+            stamp=$(date +%s%N)
+            curl -L -sS --max-time 45 -D "$headers" -o "$body" -H 'Cache-Control: no-cache, no-store, max-age=0' "${host}${route}?churvox_live_proof=${stamp}"
+            curl_code=$?
+            status=$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END{print code}' "$headers" 2>/dev/null)
+            title=$(grep -ioE '<title>[^<]+</title>' "$body" 2>/dev/null | head -1 | sed -E 's#</?title>##Ig')
+            modified=$(grep -i '^last-modified:' "$headers" 2>/dev/null | tail -1 | tr -d '\r')
+            token_count=$(grep -Foc "$token" "$body" 2>/dev/null || true)
+            static_marker=$(grep -Foc 'data-churvox-public-static' "$body" 2>/dev/null || true)
+            structured=$(grep -Foc 'data-churvox-structured-data' "$body" 2>/dev/null || true)
+
+            {
+              echo "HOST=$host"
+              echo "ROUTE=$route"
+              echo "CURL_CODE=$curl_code"
+              echo "STATUS=$status"
+              echo "TITLE=$title"
+              echo "LAST_MODIFIED=$modified"
+              echo "EXPECTED_TOKEN=$token"
+              echo "EXPECTED_TOKEN_COUNT=$token_count"
+              echo "STATIC_MARKER_COUNT=$static_marker"
+              echo "STRUCTURED_DATA_COUNT=$structured"
+              echo '---'
+            } >> "$REPORT"
+
+            if [ "$curl_code" -ne 0 ] || [ "$status" != '200' ] || [ "$token_count" -lt 1 ]; then
+              FAILURES=$((FAILURES + 1))
+            fi
+          }
+
+          for host in 'https://grassley-frontend.onrender.com' 'https://www.churvox.com'; do
+            check_route "$host" '/product' 'The admin engine between the work and the owner.'
+            check_route "$host" '/pricing' 'NZ$299/month + GST'
+            check_route "$host" '/demo' 'Follow one service job from request to owner approval.'
+            check_route "$host" '/privacy' 'Churvox does not sell personal information.'
+            check_route "$host" '/terms' 'Terms of Service'
+            check_route "$host" '/refunds-cancellations' 'Refunds and cancellations in plain language.'
+          done
+
+          echo "FAILURES=$FAILURES" >> "$REPORT"
+          cat "$REPORT"
+          {
+            echo 'REPORT<<EOF'
+            cat "$REPORT"
+            echo 'EOF'
+            echo "FAILURES=$FAILURES"
+          } >> "$GITHUB_ENV"
+
+      - name: Post live proof
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = process.env.REPORT || 'Missing live public route report';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '```text\n' + report.slice(0, 62000) + '\n```'
+            });
+
+      - name: Enforce live route proof
+        if: always()
+        shell: bash
+        run: |
+          test "${FAILURES:-99}" = '0'
