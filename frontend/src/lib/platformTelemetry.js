@@ -5,6 +5,8 @@ import API_BASE from "./apiBase";
 const sentPaths = new Set();
 const sentEvents = new Set();
 const VISITOR_ID_KEY = "churvox_unique_visitor_id_v1";
+let routeTrackingInstalled = false;
+let routeFrame = 0;
 
 function makeVisitorId() {
   try {
@@ -47,6 +49,31 @@ function post(path, body) {
   }).catch(() => {});
 }
 
+function scheduleRouteVisit() {
+  if (routeFrame || typeof window === "undefined") return;
+  routeFrame = window.requestAnimationFrame(() => {
+    routeFrame = 0;
+    trackPlatformVisit();
+  });
+}
+
+function installRouteTracking() {
+  if (routeTrackingInstalled || typeof window === "undefined") return;
+  routeTrackingInstalled = true;
+
+  for (const method of ["pushState", "replaceState"]) {
+    const original = window.history?.[method];
+    if (typeof original !== "function") continue;
+    window.history[method] = function churvoxTrackedHistoryState(...args) {
+      const result = original.apply(this, args);
+      scheduleRouteVisit();
+      return result;
+    };
+  }
+  window.addEventListener("popstate", scheduleRouteVisit);
+  window.addEventListener("hashchange", scheduleRouteVisit);
+}
+
 export function trackPlatformEvent(event, details = {}) {
   if (typeof window === "undefined" || !event) return;
   try {
@@ -62,6 +89,7 @@ export function trackPlatformEvent(event, details = {}) {
 
 export function trackPlatformVisit() {
   if (typeof window === "undefined") return;
+  installRouteTracking();
 
   try {
     const body = contextBody({ first_seen_only: false });
