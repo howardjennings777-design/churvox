@@ -1,8 +1,9 @@
-// CHURVOX_PLATFORM_VISITOR_TRACKING_20260708_UNIQUE_VISITOR_ID
+// CHURVOX_PLATFORM_VISITOR_TRACKING_20260728_REAL_FUNNEL
 
 import API_BASE from "./apiBase";
 
-let sent = false;
+const sentPaths = new Set();
+const sentEvents = new Set();
 const VISITOR_ID_KEY = "churvox_unique_visitor_id_v1";
 
 function makeVisitorId() {
@@ -17,27 +18,60 @@ function makeVisitorId() {
   }
 }
 
+function pathEvent(pathname = "") {
+  const cleanPath = `/${String(pathname || "").split("?")[0].replace(/^\/+|\/+$/g, "")}`;
+  if (cleanPath === "/") return "homepage_viewed";
+  if (cleanPath === "/pricing") return "pricing_viewed";
+  if (cleanPath === "/signup" || cleanPath === "/register") return "signup_started";
+  return "";
+}
+
+function contextBody(extra = {}) {
+  return {
+    visitor_id: makeVisitorId(),
+    path: window.location.pathname + window.location.search + window.location.hash,
+    title: document.title || "Churvox",
+    referrer: document.referrer || "",
+    source: new URLSearchParams(window.location.search).get("utm_source") || "",
+    ...extra,
+  };
+}
+
+function post(path, body) {
+  fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    keepalive: true,
+  }).catch(() => {});
+}
+
+export function trackPlatformEvent(event, details = {}) {
+  if (typeof window === "undefined" || !event) return;
+  try {
+    const body = contextBody({ event, ...details });
+    const dedupe = `${event}|${body.path}`;
+    if (sentEvents.has(dedupe)) return;
+    sentEvents.add(dedupe);
+    post("/api/platform/funnel-event", body);
+  } catch (_) {
+    // Analytics must never block a customer action.
+  }
+}
+
 export function trackPlatformVisit() {
-  if (sent || typeof window === "undefined") return;
-  sent = true;
+  if (typeof window === "undefined") return;
 
   try {
-    const body = {
-      visitor_id: makeVisitorId(),
-      path: window.location.pathname + window.location.hash,
-      title: document.title || "Churvox",
-      referrer: document.referrer || "",
-      source: new URLSearchParams(window.location.search).get("utm_source") || "",
-      first_seen_only: false,
-    };
+    const body = contextBody({ first_seen_only: false });
+    const pathKey = body.path;
+    if (sentPaths.has(pathKey)) return;
+    sentPaths.add(pathKey);
+    post("/api/platform/visit", body);
 
-    fetch(`${API_BASE}/api/platform/visit`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      keepalive: true,
-    }).catch(() => {});
+    const event = pathEvent(window.location.pathname);
+    if (event) trackPlatformEvent(event);
   } catch (_) {
     // Never block the app for tracking.
   }
