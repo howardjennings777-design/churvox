@@ -55,6 +55,16 @@ jobs:
       - name: Prove truthful funnel rules
         run: python scripts/churvox_conversion_funnel_contract.py
 
+      - name: Prove login compatibility
+        run: |
+          set -o pipefail
+          python -m unittest \
+            backend.test_churvox_auth_me_401_patch \
+            backend.test_churvox_login_emergency_final \
+            backend.test_churvox_runtime_jwt_secret_patch \
+            scripts.test_platform_owner_frontend_lock \
+            2>&1 | tee /tmp/churvox-funnel-login-compatibility.txt
+
       - name: Prove frontend and HQ wiring
         run: |
           grep -F '/api/platform/funnel-event' frontend/src/lib/platformTelemetry.js
@@ -64,3 +74,12 @@ jobs:
           grep -F '/api/admin/owner/conversion-funnel' frontend/src/churvox-site-next/hqLiveData.js
           grep -F 'Real conversion funnel live' frontend/src/churvox-site-next/hqLiveData.js
           grep -F 'churvox_conversion_funnel_patch' backend/sitecustomize.py
+
+      - name: Upload compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-funnel-login-compatibility-${{ github.run_id }}
+          path: /tmp/churvox-funnel-login-compatibility.txt
+          if-no-files-found: ignore
+          retention-days: 3
