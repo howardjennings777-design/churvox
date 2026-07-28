@@ -133,14 +133,43 @@
     order: 1 !important;
     min-height: auto !important;
   }
-}
 
-@media (max-width: 760px) {
-  /* Keep the conversion action visible across every phone page. The login/status
-     controls stay in the opened menu so the sticky header remains compact. */
+  /* Switch to the compact public header before a six-link navigation gets crowded.
+     The main conversion action remains visible beside Menu on tablets and phones. */
   .cpWorldTopbar {
     grid-template-columns: minmax(0, 1fr) auto auto !important;
     gap: 7px !important;
+  }
+
+  .cpWorldTopbar .cpWorldMenu {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    min-height: 40px !important;
+    padding: 0 11px !important;
+  }
+
+  .cpWorldTopbar .cpWorldNavLinks {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    display: none !important;
+    padding: 12px !important;
+    border: 1px solid rgba(255,255,255,.1) !important;
+    border-radius: 18px !important;
+    background: #0d100d !important;
+    box-shadow: 0 25px 65px rgba(0,0,0,.35) !important;
+  }
+
+  .cpWorldTopbar .cpWorldNavLinks.open {
+    display: grid !important;
+  }
+
+  .cpWorldTopbar .cpWorldNavLinks a {
+    justify-content: flex-start !important;
   }
 
   .cpWorldTopbar .cp26NavActions {
@@ -151,7 +180,8 @@
   }
 
   .cpWorldTopbar .cp26NavActions .cpWorldOnline,
-  .cpWorldTopbar .cp26NavActions .cp26TextLink {
+  .cpWorldTopbar .cp26NavActions .cp26TextLink,
+  .cpWorldTopbar .cpWorldBrandCode {
     display: none !important;
   }
 
@@ -163,14 +193,9 @@
     line-height: 1 !important;
     white-space: nowrap !important;
   }
+}
 
-  .cpWorldTopbar .cpWorldMenu {
-    grid-column: 3 !important;
-    grid-row: 1 !important;
-    min-height: 40px !important;
-    padding: 0 11px !important;
-  }
-
+@media (max-width: 760px) {
   .cvPremiumPage .cvSceneIntro p,
   .cvPremiumPage .cvSignalNode p,
   .cvPremiumPage .cvControlLine p,
