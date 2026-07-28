@@ -136,6 +136,41 @@
 }
 
 @media (max-width: 760px) {
+  /* Keep the conversion action visible across every phone page. The login/status
+     controls stay in the opened menu so the sticky header remains compact. */
+  .cpWorldTopbar {
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    gap: 7px !important;
+  }
+
+  .cpWorldTopbar .cp26NavActions {
+    display: flex !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    gap: 0 !important;
+  }
+
+  .cpWorldTopbar .cp26NavActions .cpWorldOnline,
+  .cpWorldTopbar .cp26NavActions .cp26TextLink {
+    display: none !important;
+  }
+
+  .cpWorldTopbar .cp26NavActions .cp26Button {
+    min-height: 40px !important;
+    padding: 8px 11px !important;
+    border-radius: 11px !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  .cpWorldTopbar .cpWorldMenu {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    min-height: 40px !important;
+    padding: 0 11px !important;
+  }
+
   .cvPremiumPage .cvSceneIntro p,
   .cvPremiumPage .cvSignalNode p,
   .cvPremiumPage .cvControlLine p,
@@ -149,5 +184,23 @@
   .cp26LegalWorld article section li {
     font-size: 14px !important;
     line-height: 1.62 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .cpWorldTopbar .cp26BrandMark {
+    width: 36px !important;
+    height: 36px !important;
+    flex-basis: 36px !important;
+  }
+
+  .cpWorldTopbar .cp26BrandWords b {
+    font-size: 14px !important;
+  }
+
+  .cpWorldTopbar .cp26NavActions .cp26Button {
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+    font-size: 11px !important;
   }
 }
