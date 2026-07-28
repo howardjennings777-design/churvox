@@ -1,0 +1,49 @@
+name: Churvox converted job assignment gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/churvox_job_assignment_exact_patch.py'
+      - 'backend/churvox_nav_attention_request_signature_fix_patch.py'
+      - 'scripts/churvox_job_assignment_exact_contract.py'
+      - '.github/workflows/churvox-job-assignment-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/churvox_job_assignment_exact_patch.py'
+      - 'backend/churvox_nav_attention_request_signature_fix_patch.py'
+      - 'scripts/churvox_job_assignment_exact_contract.py'
+      - '.github/workflows/churvox-job-assignment-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-job-assignment-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assignment:
+    name: Converted job reaches linked worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile exact assignment patch
+        run: |
+          python -m py_compile backend/churvox_job_assignment_exact_patch.py
+          python -m py_compile backend/churvox_nav_attention_request_signature_fix_patch.py
+          python -m py_compile scripts/churvox_job_assignment_exact_contract.py
+
+      - name: Prove assignment, isolation and pass-through
+        run: python scripts/churvox_job_assignment_exact_contract.py
