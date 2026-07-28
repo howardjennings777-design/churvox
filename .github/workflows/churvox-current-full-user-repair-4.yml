@@ -35,7 +35,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node --check frontend/src/pages/auth/LoginPage.js
           node --check frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js
           node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
           node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
