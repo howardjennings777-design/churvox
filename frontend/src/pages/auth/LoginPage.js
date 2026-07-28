@@ -13,7 +13,7 @@ import "./ChurvoxLoginPolish.css";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const LOGIN_TIMEOUT_MS = 28000;
-const ACCESS_REFRESH_TIMEOUT_MS = 9000;
+const ACCESS_REFRESH_TIMEOUT_MS = 30000;
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b";
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 const SAFE_RETURN_PATHS = new Set([
@@ -51,6 +51,29 @@ function withTimeout(promise, ms, message) {
     timer = window.setTimeout(() => reject(new Error(message)), ms);
   });
   return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timer));
+}
+
+function delay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function confirmFreshSession(checkAuth) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const user = await withTimeout(
+        checkAuth({ allowOfflineFallback: false }),
+        ACCESS_REFRESH_TIMEOUT_MS,
+        "Your session could not be confirmed. Please sign in again."
+      );
+      if (user) return user;
+      lastError = new Error("Your session could not be confirmed. Please sign in again.");
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt < 3) await delay(700 * attempt);
+  }
+  throw lastError || new Error("Your session could not be confirmed. Please sign in again.");
 }
 
 function rawRole(user = {}, payload = {}) {
@@ -160,12 +183,8 @@ export default function LoginPage() {
 
       let freshUser;
       try {
-        freshUser = await withTimeout(checkAuth({ allowOfflineFallback: false }), ACCESS_REFRESH_TIMEOUT_MS, "Your session could not be confirmed. Please sign in again.");
+        freshUser = await confirmFreshSession(checkAuth);
       } catch {
-        try { await logout?.(); } catch {}
-        throw new Error("Your session could not be confirmed. Please sign in again.");
-      }
-      if (!freshUser) {
         try { await logout?.(); } catch {}
         throw new Error("Your session could not be confirmed. Please sign in again.");
       }

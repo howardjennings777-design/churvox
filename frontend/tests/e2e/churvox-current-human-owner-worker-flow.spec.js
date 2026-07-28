@@ -179,7 +179,10 @@ async function waitForJobStatus(request, token, jobId, title, expected, label) {
 async function createCurrentClient(ownerPage, request, ownerToken, clientName) {
   await ownerPage.goto(`${BASE_URL}/dashboard#clients`, { waitUntil: 'domcontentloaded' });
   await expect(ownerPage.locator('.cvOwnerReady')).toBeVisible({ timeout: 20_000 });
-  await ownerPage.getByRole('button', { name: 'Add client', exact: true }).first().click(); // Stable equivalent of .filter({ visible: true }).first().click();
+  await ownerPage.getByRole('button', { name: 'Create a record', exact: true }).click();
+  const createMenu = ownerPage.getByRole('dialog', { name: 'Create in Churvox' });
+  await expect(createMenu).toBeVisible({ timeout: 10_000 });
+  await createMenu.getByRole('button', { name: /Client/i }).click();
   const dialog = ownerPage.getByRole('dialog', { name: /Create client/i });
   await expect(dialog).toBeVisible({ timeout: 10_000 });
   await dialog.getByLabel('Name', { exact: true }).fill(clientName);

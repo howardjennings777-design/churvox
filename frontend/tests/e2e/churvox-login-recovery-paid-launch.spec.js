@@ -179,12 +179,19 @@ test.describe('Paid-launch login and recovery', () => {
     await expect.poll(() => page.url()).toMatch(/\/dashboard/);
   });
 
+  test('login retries a temporary session confirmation outage', async ({ page }) => {
+    await installLoginApi(page, { postLoginMeFailures: 1 });
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await signIn(page);
+    await expect.poll(() => page.url()).toMatch(/\/dashboard/);
+  });
+
   test('login does not navigate when the new session cannot be confirmed', async ({ page }) => {
     await installLoginApi(page, { failPostLoginMeAlways: true });
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await signIn(page);
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole('alert')).toContainText(/session could not be confirmed/i);
+    await expect(page.getByRole('alert')).toContainText(/session could not be confirmed/i, { timeout: 45_000 });
   });
 
   test('friendly lockout message is shown', async ({ page }) => {

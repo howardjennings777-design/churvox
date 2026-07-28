@@ -1,3 +1,3 @@
-render-restart-current-full-user-repair-3-20260728
-Triggered: 2026-07-28T07:47:49.779103+00:00
-Purpose: production API origin, final touch target, current route and client response repairs
+render-restart-current-full-user-repair-4-20260728
+Triggered: 2026-07-28T08:31:41.683773+00:00
+Purpose: resilient visible login, live API tolerance and current Create/Team/Time audit flow

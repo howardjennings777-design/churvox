@@ -199,7 +199,7 @@ test.describe('Hardcore owner-worker visual, permission and sense check', () => 
       ['/dashboard#command', /command|decisions/i],
       ['/dashboard#work', /jobs|work/i],
       ['/dashboard#clients', /clients/i],
-      ['/dashboard#worker', /workers|field|worker/i],
+      ['/dashboard#worker', /team|people|workers|field|worker/i],
       ['/dashboard#quotes', /quotes/i],
       ['/dashboard#invoices', /invoices/i],
     ];

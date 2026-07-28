@@ -17,7 +17,7 @@ const OWNER_PAGES = [
   ['invoices', /invoices/i],
   ['schedule', /schedule/i],
   ['messages', /messages/i],
-  ['payroll', /payroll|hours/i],
+  ['payroll', /time|timesheet|hours|team status/i],
   ['integrations', /xero|accounting/i],
   ['office-team', /how churvox works|team/i],
   ['settings', /settings/i],
@@ -71,8 +71,8 @@ async function uiLogin(page, email, password, role) {
   await page.getByRole('button', { name: /open churvox|sign in|log in/i }).first().click();
   await expect.poll(() => page.url(), {
     message: `${role} stayed on login`,
-    timeout: 30_000,
-    intervals: [300, 600, 1000, 1800, 3000],
+    timeout: 60_000,
+    intervals: [300, 600, 1000, 1800, 3000, 5000],
   }).not.toMatch(/\/login(?:[?#]|$)/);
 
   const token = await page.evaluate(() => localStorage.getItem('token') || localStorage.getItem('authToken') || '');

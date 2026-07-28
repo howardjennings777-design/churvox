@@ -5,7 +5,7 @@ import API_BASE from "../lib/apiBase";
 
 axios.defaults.withCredentials = true;
 
-const API_TIMEOUT_MS = 15000;
+const API_TIMEOUT_MS = 30000;
 const MIN_LOADING_MS = 350;
 
 function backendErrorMessage(data) {
