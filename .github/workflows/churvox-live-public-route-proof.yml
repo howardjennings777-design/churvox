@@ -28,6 +28,7 @@ jobs:
             host="$1"
             route="$2"
             token="$3"
+            canonical="$4"
             safe=$(printf '%s-%s' "$host" "$route" | tr '/:.' '-')
             body="$RUNNER_TEMP/${safe}.html"
             headers="$RUNNER_TEMP/${safe}.headers"
@@ -40,6 +41,7 @@ jobs:
             token_count=$(grep -Foc "$token" "$body" 2>/dev/null || true)
             static_marker=$(grep -Foc 'data-churvox-public-static' "$body" 2>/dev/null || true)
             structured=$(grep -Foc 'data-churvox-structured-data' "$body" 2>/dev/null || true)
+            canonical_count=$(grep -Foc "rel=\"canonical\" href=\"${canonical}\"" "$body" 2>/dev/null || true)
 
             {
               echo "HOST=$host"
@@ -50,24 +52,48 @@ jobs:
               echo "LAST_MODIFIED=$modified"
               echo "EXPECTED_TOKEN=$token"
               echo "EXPECTED_TOKEN_COUNT=$token_count"
+              echo "EXPECTED_CANONICAL=$canonical"
+              echo "CANONICAL_COUNT=$canonical_count"
               echo "STATIC_MARKER_COUNT=$static_marker"
               echo "STRUCTURED_DATA_COUNT=$structured"
               echo '---'
             } >> "$REPORT"
 
-            if [ "$curl_code" -ne 0 ] || [ "$status" != '200' ] || [ "$token_count" -lt 1 ] || [ "$static_marker" -lt 1 ]; then
+            if [ "$curl_code" -ne 0 ] || [ "$status" != '200' ] || [ "$token_count" -lt 1 ] || [ "$canonical_count" -lt 1 ] || [ "$static_marker" -lt 1 ] || [ "$structured" -lt 1 ]; then
               FAILURES=$((FAILURES + 1))
             fi
           }
 
           for host in 'https://grassley-frontend.onrender.com' 'https://www.churvox.com'; do
-            check_route "$host" '/product/' 'The admin engine between the work and the owner.'
-            check_route "$host" '/pricing/' 'NZ$299/month + GST'
-            check_route "$host" '/demo/' 'Follow one service job from request to owner approval.'
-            check_route "$host" '/privacy/' 'Churvox does not sell personal information.'
-            check_route "$host" '/terms/' 'Terms of Service'
-            check_route "$host" '/refunds-cancellations/' 'Refunds and cancellations in plain language.'
+            check_route "$host" '/product/' 'One workflow from client request to owner-approved invoice.' 'https://www.churvox.com/product/'
+            check_route "$host" '/pricing/' 'NZ$299/month + GST' 'https://www.churvox.com/pricing/'
+            check_route "$host" '/demo/' 'Follow one service job from request to owner approval.' 'https://www.churvox.com/demo/'
+            check_route "$host" '/privacy/' 'Churvox does not sell personal information.' 'https://www.churvox.com/legal/privacy/'
+            check_route "$host" '/terms/' 'Terms of Service' 'https://www.churvox.com/legal/terms/'
+            check_route "$host" '/refunds-cancellations/' 'Refunds and cancellations in plain language.' 'https://www.churvox.com/refunds-cancellations/'
           done
+
+          sitemap="$RUNNER_TEMP/churvox-sitemap.xml"
+          curl -L -sS --max-time 45 -o "$sitemap" -H 'Cache-Control: no-cache, no-store, max-age=0' "https://www.churvox.com/sitemap.xml?churvox_live_proof=$(date +%s%N)"
+          sitemap_curl=$?
+          sitemap_routes=0
+          for url in \
+            'https://www.churvox.com/product/' \
+            'https://www.churvox.com/pricing/' \
+            'https://www.churvox.com/demo/' \
+            'https://www.churvox.com/legal/privacy/' \
+            'https://www.churvox.com/legal/terms/' \
+            'https://www.churvox.com/refunds-cancellations/'; do
+            grep -Fq "<loc>${url}</loc>" "$sitemap" && sitemap_routes=$((sitemap_routes + 1))
+          done
+          {
+            echo "SITEMAP_CURL_CODE=$sitemap_curl"
+            echo "SITEMAP_REQUIRED_ROUTES=$sitemap_routes/6"
+            echo '---'
+          } >> "$REPORT"
+          if [ "$sitemap_curl" -ne 0 ] || [ "$sitemap_routes" -ne 6 ]; then
+            FAILURES=$((FAILURES + 1))
+          fi
 
           echo "FAILURES=$FAILURES" >> "$REPORT"
           cat "$REPORT"
