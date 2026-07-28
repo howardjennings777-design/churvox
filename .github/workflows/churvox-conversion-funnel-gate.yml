@@ -6,6 +6,7 @@ on:
     paths:
       - 'backend/churvox_conversion_funnel_patch.py'
       - 'backend/churvox_conversion_funnel_exact_route_patch.py'
+      - 'backend/churvox_hq_hello_only_guard_patch.py'
       - 'backend/churvox_startup_patch_loader.py'
       - 'backend/sitecustomize.py'
       - 'frontend/src/lib/platformTelemetry.js'
@@ -18,6 +19,7 @@ on:
     paths:
       - 'backend/churvox_conversion_funnel_patch.py'
       - 'backend/churvox_conversion_funnel_exact_route_patch.py'
+      - 'backend/churvox_hq_hello_only_guard_patch.py'
       - 'backend/churvox_startup_patch_loader.py'
       - 'backend/sitecustomize.py'
       - 'frontend/src/lib/platformTelemetry.js'
@@ -56,6 +58,7 @@ jobs:
         run: |
           python -m py_compile backend/churvox_conversion_funnel_patch.py
           python -m py_compile backend/churvox_conversion_funnel_exact_route_patch.py
+          python -m py_compile backend/churvox_hq_hello_only_guard_patch.py
           python -m py_compile backend/churvox_startup_patch_loader.py
           python -m py_compile backend/sitecustomize.py
           python -m py_compile scripts/churvox_conversion_funnel_contract.py
@@ -77,6 +80,15 @@ jobs:
           assert loader.PATCH_MODULES[-1] == 'churvox_conversion_funnel_exact_route_patch'
           print('Conversion funnel and exact public middleware are installed by the final startup loader.')
           PY
+
+      - name: Prove real Render wrapper mounts the funnel
+        run: |
+          grep -F 'FUNNEL_WRAPPER_VERSION = "churvox-funnel-live-wrapper-20260728a"' backend/churvox_hq_hello_only_guard_patch.py
+          grep -F '"churvox_conversion_funnel_patch"' backend/churvox_hq_hello_only_guard_patch.py
+          grep -F '"churvox_conversion_funnel_exact_route_patch"' backend/churvox_hq_hello_only_guard_patch.py
+          grep -F '_install_conversion_funnel(module)' backend/churvox_hq_hello_only_guard_patch.py
+          grep -F '/api/platform/funnel-boot' backend/churvox_hq_hello_only_guard_patch.py
+          grep -F "'churvox_hq_hello_only_guard_patch'" backend/server/__init__.py
 
       - name: Prove login compatibility
         run: |
