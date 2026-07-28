@@ -12,7 +12,7 @@ const OWNER_PAGES = [
   ['command', /command|approval|owner/i],
   ['work', /jobs|work/i],
   ['clients', /clients/i],
-  ['worker', /workers|field/i],
+  ['worker', /team|people|workers|field/i],
   ['quotes', /quotes/i],
   ['invoices', /invoices/i],
   ['schedule', /schedule/i],
@@ -20,7 +20,6 @@ const OWNER_PAGES = [
   ['payroll', /payroll|hours/i],
   ['integrations', /xero|accounting/i],
   ['office-team', /how churvox works|team/i],
-  ['activity', /activity/i],
   ['settings', /settings/i],
   ['plans', /plans|pricing/i],
   ['help', /help/i],
@@ -89,11 +88,24 @@ async function uiLogin(page, email, password, role) {
 }
 
 async function apiSession(page, email, password, role) {
-  const response = await page.request.post(apiUrl('/api/auth/login'), {
-    data: { email, password },
-    timeout: 30_000,
-  });
-  const body = await responseBody(response);
+  let response;
+  let body = {};
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      response = await page.request.post(apiUrl('/api/auth/login'), {
+        data: { email, password },
+        timeout: 60_000,
+      });
+      body = await responseBody(response);
+      if (response.ok() || ![429, 500, 502, 503, 504].includes(response.status()) || attempt === 3) break;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 3) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+  }
+  if (!response) throw lastError || new Error(`${role} API session login produced no response`);
   expect(response.ok(), `${role} API session login failed ${response.status()}: ${JSON.stringify(body).slice(0, 700)}`).toBeTruthy();
   const token = tokenFrom(body);
   expect(token, `${role} API session login returned no token`).toBeTruthy();

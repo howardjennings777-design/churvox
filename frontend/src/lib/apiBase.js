@@ -6,6 +6,7 @@ function stripApiSuffix(value) {
   return clean(value).replace(/\/api$/i, "");
 }
 
+const PRODUCTION_BACKEND = "https://grassley-backend.onrender.com";
 const OUTREACH_GET_PATH = "/api/admin/owner/tester-outreach";
 const HQ_READ_PREFIXES = ["/api/admin/owner", "/api/platform/hq"];
 const OUTREACH_FETCH_GUARD = "__CHURVOX_OUTREACH_SIMPLE_GET_GUARD__";
@@ -80,28 +81,28 @@ function configuredBackend() {
   );
 }
 
-function isFrontendProxyHost(host = "") {
+function isLocalFrontendHost(host = "") {
   const cleanHost = String(host || "").trim().toLowerCase();
-  return (
-    cleanHost === "www.churvox.com" ||
-    cleanHost === "churvox.com" ||
-    cleanHost === "localhost" ||
-    cleanHost === "127.0.0.1" ||
-    cleanHost === "0.0.0.0" ||
-    cleanHost === "::1"
-  );
+  return ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(cleanHost);
+}
+
+function isChurvoxProductionHost(host = "") {
+  const cleanHost = String(host || "").trim().toLowerCase();
+  return cleanHost === "www.churvox.com" || cleanHost === "churvox.com";
 }
 
 function resolveApiBase() {
-  // Production and local branch previews both use the frontend's same-origin
-  // /api proxy. Return the concrete origin rather than an empty string so
-  // live-data loaders can distinguish a valid same-origin backend from a
-  // missing backend while auth cookies remain first-party.
-  if (typeof window !== "undefined" && isFrontendProxyHost(window.location.hostname)) {
-    return clean(window.location.origin);
+  const configured = configuredBackend();
+  if (typeof window !== "undefined") {
+    // The public Render frontend does not own a production /api proxy. Sending
+    // auth to www.churvox.com/api returns the website fallback as HTTP 200,
+    // which looks successful but contains no user or token. Production browser
+    // traffic must use the real backend origin; local previews retain their
+    // same-origin development proxy.
+    if (isChurvoxProductionHost(window.location.hostname)) return configured || PRODUCTION_BACKEND;
+    if (isLocalFrontendHost(window.location.hostname)) return clean(window.location.origin);
   }
-
-  return configuredBackend() || "";
+  return configured || PRODUCTION_BACKEND;
 }
 
 installOutreachSimpleGetGuard();

@@ -136,7 +136,7 @@
 
 .cvsContextIdentity { padding: 0 20px; }
 .cvsContextBeam nav { gap: 4px; padding: 7px 16px; }
-.cvsContextBeam nav button { min-height: 36px; padding: 0 15px; }
+.cvsContextBeam nav button { min-height: 44px; padding: 0 15px; }
 .cvsContextBeam nav button.active { box-shadow: inset 0 -2px 0 var(--cvs-orange); }
 
 /* Better page rhythm: strong, not oversized. */
@@ -284,7 +284,7 @@
   }
 
   .cvsContextBeam nav { min-height: var(--cvs-context-height); padding: 6px 10px; }
-  .cvsContextBeam nav button { min-height: 35px; padding: 0 14px; }
+  .cvsContextBeam nav button { min-height: 44px; padding: 0 14px; }
   .cvsContextLine { min-height: var(--cvs-context-height); }
 
   .cvsWorkspace { padding: 17px 14px 106px; }

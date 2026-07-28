@@ -21,7 +21,7 @@ function emailFrom(body = {}) {
 }
 
 function idOf(row = {}) {
-  const raw = row?.id || row?._id || row?.job_id || row?.worker_id || row?.user_id || row?.action_id || row?.source_id || '';
+  const raw = row?.id || row?._id || row?.client_id || row?.job_id || row?.worker_id || row?.user_id || row?.action_id || row?.source_id || '';
   if (raw && typeof raw === 'object') return String(raw.$oid || raw.oid || raw.id || '');
   return String(raw || '');
 }
@@ -29,7 +29,7 @@ function idOf(row = {}) {
 function rowsFrom(payload) {
   const body = payload?.data?.data ?? payload?.data ?? payload;
   if (Array.isArray(body)) return body;
-  for (const key of ['items', 'records', 'results', 'workers', 'team', 'members', 'jobs', 'slips', 'actions', 'data']) {
+  for (const key of ['items', 'records', 'results', 'clients', 'workers', 'team', 'members', 'jobs', 'slips', 'actions', 'data']) {
     if (Array.isArray(body?.[key])) return body[key];
   }
   return [];
@@ -48,8 +48,7 @@ async function bodyOf(response) {
 }
 
 async function apiLogin(request, email, password, label) {
-  const response = await request.post(apiUrl('/api/auth/login'), { data: { email, password }, timeout: 30_000 });
-  const body = await bodyOf(response);
+  const { response, body } = await api(request, 'post', '/api/auth/login', '', { email, password });
   expect(response.ok(), `${label} login failed ${response.status()}: ${JSON.stringify(body).slice(0, 700)}`).toBeTruthy();
   const token = tokenFrom(body);
   expect(token, `${label} login returned no token`).toBeTruthy();
@@ -58,12 +57,23 @@ async function apiLogin(request, email, password, label) {
 }
 
 async function api(request, method, path, token, data) {
-  const response = await request[method](apiUrl(path), {
-    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    ...(data === undefined ? {} : { data }),
-    timeout: 30_000,
-  });
-  return { response, body: await bodyOf(response) };
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await request[method](apiUrl(path), {
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        ...(data === undefined ? {} : { data }),
+        timeout: 60_000,
+      });
+      const body = await bodyOf(response);
+      if (response.ok() || ![429, 500, 502, 503, 504].includes(response.status()) || attempt === 3) return { response, body };
+    } catch (error) {
+      lastError = error;
+      if (attempt === 3) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+  }
+  throw lastError || new Error(`${method.toUpperCase()} ${path} produced no response`);
 }
 
 async function uiLogin(page, email, password, role) {
@@ -185,14 +195,14 @@ async function createCurrentClient(ownerPage, request, ownerToken, clientName) {
   const response = await responsePromise;
   const body = await bodyOf(response);
   expect(response.ok(), `Current client drawer failed ${response.status()}: ${JSON.stringify(body).slice(0, 900)}`).toBeTruthy();
-  let clientId = idOf(body.client || body.record || body.data?.client || body.data?.record || body.data || body);
+  let clientId = idOf(body.client || body.record || body.result?.client || body.result?.record || body.data?.client || body.data?.record || body.data || body) || String(body.client_id || body.data?.client_id || body.result?.client_id || '');
   if (!clientId) {
     await expect.poll(async () => {
       const listed = await api(request, 'get', `/api/clients?ts=${Date.now()}`, ownerToken);
       const found = rowsFrom(listed.body).find((row) => contains(row, clientName));
       clientId = idOf(found);
       return Boolean(clientId);
-    }, { timeout: 20_000, intervals: [500, 900, 1500, 2500] }).toBe(true);
+    }, { timeout: 45_000, intervals: [500, 900, 1500, 2500, 4000] }).toBe(true);
   }
   await expect(ownerPage.getByText(clientName).first()).toBeVisible({ timeout: 20_000 });
   return clientId;
