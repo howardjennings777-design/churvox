@@ -1,0 +1,54 @@
+services:
+  - type: web
+    runtime: static
+    name: grassley-frontend
+    rootDir: frontend
+    buildCommand: npm ci --legacy-peer-deps && npm run build
+    staticPublishPath: build
+    autoDeployTrigger: commit
+    routes:
+      - type: rewrite
+        source: /product
+        destination: /product/index.html
+      - type: rewrite
+        source: /pricing
+        destination: /pricing/index.html
+      - type: rewrite
+        source: /demo
+        destination: /demo/index.html
+      - type: rewrite
+        source: /about
+        destination: /about/index.html
+      - type: rewrite
+        source: /security
+        destination: /security/index.html
+      - type: rewrite
+        source: /privacy
+        destination: /privacy/index.html
+      - type: rewrite
+        source: /legal/privacy
+        destination: /legal/privacy/index.html
+      - type: rewrite
+        source: /terms
+        destination: /terms/index.html
+      - type: rewrite
+        source: /legal/terms
+        destination: /legal/terms/index.html
+      - type: rewrite
+        source: /refunds-cancellations
+        destination: /refunds-cancellations/index.html
+      - type: rewrite
+        source: /login
+        destination: /login/index.html
+      - type: rewrite
+        source: /signup
+        destination: /signup/index.html
+      - type: rewrite
+        source: /support
+        destination: /support/index.html
+      - type: rewrite
+        source: /contact
+        destination: /contact/index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
