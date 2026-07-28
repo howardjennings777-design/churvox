@@ -107,6 +107,12 @@ replace_once(
   test('login does not navigate when the new session cannot be confirmed', async ({ page }) => {''',
     "cover a temporary post-login session outage",
 )
+replace_once(
+    login_test,
+    "    await expect(page.getByRole('alert')).toContainText(/session could not be confirmed/i);",
+    "    await expect(page.getByRole('alert')).toContainText(/session could not be confirmed/i, { timeout: 45_000 });",
+    "wait for deliberate session retry exhaustion before checking the final error",
+)
 
 live_test = "frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js"
 replace_once(
