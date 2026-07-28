@@ -10,7 +10,7 @@ import "./ChurvoxPremiumScenes.css";
 import "./ChurvoxPublicContrastFixes.css";
 
 const DEFAULT_TRIAL_PATH = "/signup/?plan=operator";
-const navItems = [["/product/", "Product"], ["/pricing/", "Pricing"], ["/demo/", "Demo"], ["/security/", "Security"], ["/contact/", "Contact"]];
+const navItems = [["/product/", "Product"], ["/features/", "Features"], ["/pricing/", "Pricing"], ["/demo/", "Demo"], ["/security/", "Security"], ["/contact/", "Contact"]];
 
 const PUBLIC_COPY = new Map([
   ["Churvox access layer", "Secure sign in"],
