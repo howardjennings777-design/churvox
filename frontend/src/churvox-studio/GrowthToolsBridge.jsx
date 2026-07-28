@@ -208,7 +208,7 @@ function ActivationTracker({ user }) {
       alive = false;
       window.removeEventListener("churvox:data-refresh", probe);
     };
-  }, [user?.email]);
+  }, [user]);
 
   return null;
 }
