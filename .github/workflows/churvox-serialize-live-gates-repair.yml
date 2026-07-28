@@ -10,6 +10,10 @@ permissions:
   contents: write
   actions: write
 
+concurrency:
+  group: churvox-one-use-live-gate-repair
+  cancel-in-progress: true
+
 jobs:
   repair:
     runs-on: ubuntu-latest
@@ -36,11 +40,12 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
+          ref_expression = '$' + '{{ github.ref }}'
           replacements = {
-              '.github/workflows/churvox-product-readiness-gate.yml': 'churvox-product-readiness-${{ github.ref }}',
-              '.github/workflows/churvox-studio-human-everything.yml': 'churvox-studio-human-everything-${{ github.ref }}',
-              '.github/workflows/playwright-full-site.yml': 'churvox-full-site-${{ github.ref }}',
-              '.github/workflows/churvox-paid-launch-gate.yml': 'churvox-paid-launch-${{ github.ref }}',
+              '.github/workflows/churvox-product-readiness-gate.yml': f'churvox-product-readiness-{ref_expression}',
+              '.github/workflows/churvox-studio-human-everything.yml': f'churvox-studio-human-everything-{ref_expression}',
+              '.github/workflows/playwright-full-site.yml': f'churvox-full-site-{ref_expression}',
+              '.github/workflows/churvox-paid-launch-gate.yml': f'churvox-paid-launch-{ref_expression}',
           }
           for file_name, old_group in replacements.items():
               path = Path(file_name)
