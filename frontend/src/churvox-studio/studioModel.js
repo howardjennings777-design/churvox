@@ -41,6 +41,7 @@ const ROUTE_ALIASES = {
   worker: "crew",
   team: "crew",
   payroll: "timesheets",
+  integrations: "accounting",
   xero: "accounting",
   help: "support",
   guide: "support",

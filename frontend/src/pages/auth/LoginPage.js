@@ -182,10 +182,10 @@ export default function LoginPage() {
       }
 
       const destination = postLoginPath(confirmed);
-      navigate(destination, { replace: true });
-      if (destination.startsWith("/dashboard") || destination === "/plans") {
-        window.setTimeout(() => window.dispatchEvent(new Event("churvox-owner-app-ready")), 120);
-      }
+      // The server session has been confirmed. A full route replacement avoids a
+      // React state/navigation race where the protected route can briefly see the
+      // previous anonymous render and send a valid user back to /login.
+      window.location.replace(destination);
     } catch (loginError) {
       setError(friendlyLoginError(loginError));
     } finally {

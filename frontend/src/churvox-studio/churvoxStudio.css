@@ -195,7 +195,7 @@
 .cvsContextIdentity > span { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 8px; background: var(--cvs-ink); color: #fff; }
 .cvsContextIdentity b { font-family: "Manrope", sans-serif; }
 .cvsContextBeam nav { display: flex; align-items: center; gap: 2px; padding: 6px 14px; }
-.cvsContextBeam nav button { min-height: 35px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: #656b66; cursor: pointer; font-size: 12px; font-weight: 700; }
+.cvsContextBeam nav button { min-height: 44px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: #656b66; cursor: pointer; font-size: 12px; font-weight: 700; }
 .cvsContextBeam nav button:hover { background: #e7e4dc; color: var(--cvs-ink); }
 .cvsContextBeam nav button.active { background: var(--cvs-ink); color: #fff; }
 .cvsContextStatus { display: flex; align-items: center; gap: 7px; padding: 0 20px; border-left: 1px solid var(--cvs-line); color: #626862; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
