@@ -17,8 +17,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: churvox-full-site-${{ github.ref }}
-  cancel-in-progress: true
+  # The live Render backend is limited to 512 MB. Queue all heavy live suites
+  # globally so browser tests cannot overload the customer service in parallel.
+  group: churvox-live-backend-tests
+  cancel-in-progress: false
 
 jobs:
   playwright:
