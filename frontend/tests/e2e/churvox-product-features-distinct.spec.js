@@ -13,6 +13,24 @@ function digest(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
+function brightness(color) {
+  const values = String(color || '').match(/[\d.]+/g)?.slice(0, 3).map(Number) || [];
+  if (values.length !== 3) return 0;
+  return (values[0] * 0.2126) + (values[1] * 0.7152) + (values[2] * 0.0722);
+}
+
+async function expectReadable(page, selector, minimum = 145) {
+  const locator = page.locator(selector).first();
+  await expect(locator).toBeVisible();
+  const value = await locator.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return style.webkitTextFillColor && style.webkitTextFillColor !== 'rgba(0, 0, 0, 0)'
+      ? style.webkitTextFillColor
+      : style.color;
+  });
+  expect(brightness(value), `${selector} is too dark: ${value}`).toBeGreaterThanOrEqual(minimum);
+}
+
 test('Product and Features are genuinely different public pages', async ({ page }, testInfo) => {
   await open(page, '/product/');
   await expect(page.locator('main[data-room="product"]')).toBeVisible();
@@ -28,6 +46,9 @@ test('Product and Features are genuinely different public pages', async ({ page 
   await expect(page.locator('.cpfFeatureStage')).toContainText('Capture');
   await expect(page.locator('.cpfFeatureStage')).toContainText('Command');
   await expect(page.locator('.cpfFeatureStage')).toContainText('Handoff');
+  await expectReadable(page, '.cpfFeatureCopy h2', 185);
+  await expectReadable(page, '.cpfFeatureCopy p', 145);
+  await expectReadable(page, '.cpfFeature li', 145);
   const features = await page.screenshot({ fullPage: true });
 
   expect(digest(features), 'Product and Features full-page screenshots must differ').not.toBe(digest(product));
@@ -53,6 +74,8 @@ test('Features remains readable and compact on mobile', async ({ page }, testInf
   await open(page, '/features/');
   await expect(page.locator('.cpWorldTopbar .cp26NavActions .cp26Button')).toBeVisible();
   await expect(page.locator('.cpfFlowRail a')).toHaveCount(6);
+  await expectReadable(page, '.cpfFeatureCopy h2', 185);
+  await expectReadable(page, '.cpfFeatureCopy p', 145);
   const featureBoxes = await page.locator('.cpfFeature').evaluateAll((items) => items.map((item) => {
     const box = item.getBoundingClientRect();
     return { width: box.width, left: box.left, right: box.right };
