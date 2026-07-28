@@ -1,0 +1,64 @@
+name: Churvox Product and Features distinct gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/src/pages/marketing/ExecutiveFeaturesPage.jsx'
+      - 'frontend/src/pages/marketing/PublicFeaturesPage.jsx'
+      - 'frontend/src/pages/marketing/PublicFeaturesPage.css'
+      - 'frontend/src/pages/marketing/ChurvoxPublicShell.jsx'
+      - 'frontend/src/pages/marketing/ChurvoxPublicContrastFixes.css'
+      - 'frontend/tests/e2e/churvox-product-features-distinct.spec.js'
+      - '.github/workflows/churvox-product-features-distinct.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  distinct:
+    name: Distinct Product and Features pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build production public site
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Prove Product and Features differ on desktop and mobile
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+          PLAYWRIGHT_WEB_SERVER_COMMAND: npx serve -s build -l 4173
+        run: npx playwright test tests/e2e/churvox-product-features-distinct.spec.js --workers=1
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-product-features-evidence-${{ github.run_id }}
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 14
