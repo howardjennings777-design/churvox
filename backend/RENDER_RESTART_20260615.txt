@@ -1,6 +1,6 @@
-render-restart-20260728
-Triggered: 2026-07-28T03:10:00Z
-Deploy main through: 015d157cd4d1df84ea578b1cc7d2256ce0434ffb
-Purpose: deploy the exact public conversion-funnel middleware, production CORS handling and owner-only HQ funnel report.
+render-restart-20260728-final-wrapper
+Triggered: 2026-07-28T03:24:00Z
+Deploy main through: a75b590eb2bda39bd3ed38481d143d1bf4bde760
+Purpose: deploy the conversion funnel through the real backend/server/__init__.py Render wrapper, including the exact public POST middleware and owner-only HQ report.
 
 This file exists only to trigger a backend Render rebuild from main.
