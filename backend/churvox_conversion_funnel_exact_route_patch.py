@@ -113,8 +113,8 @@ async def record_event(db, get_current_user, request, payload: Dict[str, Any]):
             },
             upsert=True,
         )
-    except Exception as exc:
-        return JSONResponse({"ok": False, "detail": "Funnel event could not be recorded", "error": str(exc)[:160]}, status_code=500)
+    except Exception:
+        return JSONResponse({"ok": False, "detail": "Funnel event could not be recorded"}, status_code=500)
     return JSONResponse({"ok": True, "recorded": True, "event": event, "source": "churvox_conversion_funnel_exact_route"})
 
 
