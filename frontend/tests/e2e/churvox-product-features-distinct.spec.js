@@ -64,3 +64,17 @@ test('Features remains readable and compact on mobile', async ({ page }, testInf
     expect(box.width).toBeGreaterThan(250);
   }
 });
+
+test('tablet navigation switches before the public links crowd', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 900 });
+  for (const route of ['/', '/features/', '/pricing/']) {
+    await open(page, route);
+    const header = page.locator('.cpWorldTopbar');
+    await expect(header.locator('.cpWorldMenu')).toBeVisible();
+    await expect(header.locator('.cp26NavActions .cp26Button')).toBeVisible();
+    await expect(header.locator('.cpWorldNavLinks')).toBeHidden();
+    await header.locator('.cpWorldMenu').click();
+    await expect(header.locator('.cpWorldNavLinks.open')).toBeVisible();
+    await expect(header.locator('a[href="/features/"]')).toBeVisible();
+  }
+});
