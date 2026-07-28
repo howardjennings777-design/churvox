@@ -113,3 +113,24 @@ test('signup puts the form before reassurance on mobile', async ({ page }, testI
   });
   expect(positions.cardTop, JSON.stringify(positions)).toBeLessThan(positions.panelTop);
 });
+
+test('mobile public header keeps trial action visible beside Menu', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('mobile'), 'Mobile navigation only');
+  const routes = ['/', '/product/', '/pricing/', '/demo/', '/security/', '/contact/'];
+  for (const route of routes) {
+    await openPublicPage(page, route);
+    const header = page.locator('.cpWorldTopbar');
+    const cta = header.locator('.cp26NavActions .cp26Button');
+    const menu = header.locator('.cpWorldMenu');
+    await expect(cta, `${route} should keep Start free trial visible`).toBeVisible();
+    await expect(cta).toHaveText(/Start free trial/i);
+    await expect(menu).toBeVisible();
+    const box = await cta.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box?.height || 0, `${route} CTA should remain tappable`).toBeGreaterThanOrEqual(40);
+    expect((box?.x || 0) + (box?.width || 0), `${route} CTA should stay inside the phone viewport`).toBeLessThanOrEqual((viewport?.width || 0) + 1);
+    await menu.click();
+    await expect(header.locator('.cpWorldNavLinks.open')).toBeVisible();
+    await menu.click();
+  }
+});
