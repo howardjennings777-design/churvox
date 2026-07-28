@@ -21,42 +21,46 @@ jobs:
           set +e
           REPORT="$RUNNER_TEMP/churvox-live-funnel-proof.txt"
           FAILURES=0
+          HOST='https://grassley-backend.onrender.com'
           : > "$REPORT"
 
-          for host in 'https://grassley-backend.onrender.com' 'https://www.churvox.com'; do
-            visitor="seed_live_proof_${GITHUB_RUN_ID}_$(date +%s%N)"
-            event_body="$RUNNER_TEMP/funnel-event-$(echo "$host" | tr '/:.' '-').json"
-            event_status=$(curl -L -sS --max-time 60 -o "$event_body" -w '%{http_code}' \
-              -H 'Content-Type: application/json' \
-              -H 'Origin: https://www.churvox.com' \
-              -X POST "${host}/api/platform/funnel-event" \
-              --data "{\"event\":\"homepage_viewed\",\"visitor_id\":\"${visitor}\",\"path\":\"/\",\"source\":\"seed-live-proof\"}")
-            event_ok=$(grep -Foc '"recorded":true' "$event_body" 2>/dev/null || true)
-            source_ok=$(grep -Foc '"event":"homepage_viewed"' "$event_body" 2>/dev/null || true)
+          visitor="seed_live_proof_${GITHUB_RUN_ID}_$(date +%s%N)"
+          event_body="$RUNNER_TEMP/funnel-event.json"
+          event_headers="$RUNNER_TEMP/funnel-event.headers"
+          event_status=$(curl -L -sS --max-time 60 -D "$event_headers" -o "$event_body" -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -H 'Origin: https://www.churvox.com' \
+            -X POST "${HOST}/api/platform/funnel-event" \
+            --data "{\"event\":\"homepage_viewed\",\"visitor_id\":\"${visitor}\",\"path\":\"/\",\"source\":\"seed-live-proof\"}")
+          event_ok=$(grep -Foc '"recorded":true' "$event_body" 2>/dev/null || true)
+          source_ok=$(grep -Foc '"event":"homepage_viewed"' "$event_body" 2>/dev/null || true)
+          cors_ok=$(grep -Fic 'access-control-allow-origin: https://www.churvox.com' "$event_headers" 2>/dev/null || true)
 
-            owner_body="$RUNNER_TEMP/funnel-owner-$(echo "$host" | tr '/:.' '-').json"
-            owner_status=$(curl -L -sS --max-time 60 -o "$owner_body" -w '%{http_code}' \
-              -H 'Accept: application/json' \
-              "${host}/api/admin/owner/conversion-funnel")
+          owner_body="$RUNNER_TEMP/funnel-owner.json"
+          owner_status=$(curl -L -sS --max-time 60 -o "$owner_body" -w '%{http_code}' \
+            -H 'Accept: application/json' \
+            -H 'Origin: https://www.churvox.com' \
+            "${HOST}/api/admin/owner/conversion-funnel")
 
-            {
-              echo "HOST=$host"
-              echo "EVENT_STATUS=$event_status"
-              echo "EVENT_RECORDED_COUNT=$event_ok"
-              echo "EVENT_NAME_COUNT=$source_ok"
-              echo "OWNER_SIGNED_OUT_STATUS=$owner_status"
-              echo "EVENT_BODY=$(tr -d '\n' < "$event_body" | head -c 500)"
-              echo "OWNER_BODY=$(tr -d '\n' < "$owner_body" | head -c 500)"
-              echo '---'
-            } >> "$REPORT"
+          {
+            echo "HOST=$HOST"
+            echo "PRODUCTION_ORIGIN=https://www.churvox.com"
+            echo "EVENT_STATUS=$event_status"
+            echo "EVENT_RECORDED_COUNT=$event_ok"
+            echo "EVENT_NAME_COUNT=$source_ok"
+            echo "CORS_ORIGIN_COUNT=$cors_ok"
+            echo "OWNER_SIGNED_OUT_STATUS=$owner_status"
+            echo "EVENT_BODY=$(tr -d '\n' < "$event_body" | head -c 500)"
+            echo "OWNER_BODY=$(tr -d '\n' < "$owner_body" | head -c 500)"
+            echo '---'
+          } >> "$REPORT"
 
-            if [ "$event_status" != '200' ] || [ "$event_ok" -lt 1 ] || [ "$source_ok" -lt 1 ]; then
-              FAILURES=$((FAILURES + 1))
-            fi
-            if [ "$owner_status" != '401' ] && [ "$owner_status" != '403' ]; then
-              FAILURES=$((FAILURES + 1))
-            fi
-          done
+          if [ "$event_status" != '200' ] || [ "$event_ok" -lt 1 ] || [ "$source_ok" -lt 1 ] || [ "$cors_ok" -lt 1 ]; then
+            FAILURES=$((FAILURES + 1))
+          fi
+          if [ "$owner_status" != '401' ] && [ "$owner_status" != '403' ]; then
+            FAILURES=$((FAILURES + 1))
+          fi
 
           echo "FAILURES=$FAILURES" >> "$REPORT"
           cat "$REPORT"
