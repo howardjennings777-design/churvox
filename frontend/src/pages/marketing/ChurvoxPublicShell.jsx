@@ -123,7 +123,7 @@ export function PublicFooter() {
   return <footer className="cpWorldFooter">
     <div className="cpWorldFooterGrid">
       <div className="cpWorldFooterLead cp26FooterLead"><span className="cp26BrandMark"><ChurvoxLogo variant="mark" size="md" /></span><div><b>Churvox</b><p>Manage jobs, clients, workers, quotes and invoices in one place. Churvox prepares the admin; the owner reviews and approves.</p></div></div>
-      <div className="cpWorldFooterGroup"><b>Product</b><nav><FooterLink to="/product/">Features</FooterLink><FooterLink to="/demo/">Demo</FooterLink><FooterLink to="/pricing/">Pricing</FooterLink><FooterLink to="/industries/landscaping/">Industries</FooterLink></nav></div>
+      <div className="cpWorldFooterGroup"><b>Product</b><nav><FooterLink to="/product/">Product overview</FooterLink><FooterLink to="/features/">Features</FooterLink><FooterLink to="/demo/">Demo</FooterLink><FooterLink to="/pricing/">Pricing</FooterLink><FooterLink to="/industries/landscaping/">Industries</FooterLink></nav></div>
       <div className="cpWorldFooterGroup"><b>Help and trust</b><nav><FooterLink to="/about/">About</FooterLink><FooterLink to="/security/">Security</FooterLink><FooterLink to="/support/">Support</FooterLink><FooterLink to="/refunds-cancellations/">Billing and cancellations</FooterLink><FooterLink to="/contact/">Contact</FooterLink></nav></div>
       <div className="cpWorldFooterGroup"><b>Account and legal</b><nav><FooterLink to="/login/">Log in</FooterLink><FooterLink to={DEFAULT_TRIAL_PATH}>Start trial</FooterLink><FooterLink to="/legal/privacy/">Privacy</FooterLink><FooterLink to="/legal/terms/">Terms</FooterLink><FooterLink to="/delete-account">Delete account</FooterLink></nav></div>
     </div>
