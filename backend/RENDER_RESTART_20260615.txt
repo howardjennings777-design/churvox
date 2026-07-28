@@ -1,6 +1,6 @@
-render-restart-20260720
-Triggered: 2026-07-20T01:52:24Z
-Deploy main through: 73d4330e9808b9c962d4a2d4b1973567e4341573
-Purpose: public tester application intake, source storage, HQ application listing and confirmation email support.
+render-restart-20260728
+Triggered: 2026-07-28T03:10:00Z
+Deploy main through: 015d157cd4d1df84ea578b1cc7d2256ce0434ffb
+Purpose: deploy the exact public conversion-funnel middleware, production CORS handling and owner-only HQ funnel report.
 
 This file exists only to trigger a backend Render rebuild from main.
