@@ -22,7 +22,10 @@ function parseableNodeScript(source) {
 const frontendPackage = JSON.parse(read('frontend/package.json'));
 const startup = read('frontend/scripts/start-production.cjs');
 const strengthener = read('frontend/scripts/strengthen-public-search-pages.cjs');
+const canonicalizer = read('frontend/scripts/canonicalize-public-static-paths.cjs');
 const server = read('frontend/server.cjs');
+const blueprint = read('render.yaml');
+const sitemap = read('frontend/public/sitemap.xml');
 
 expect(
   frontendPackage.scripts?.start === 'node scripts/start-production.cjs',
@@ -30,14 +33,16 @@ expect(
 );
 expect(
   String(frontendPackage.scripts?.build || '').includes('generate-public-search-pages.cjs')
-    && String(frontendPackage.scripts?.build || '').includes('strengthen-public-search-pages.cjs'),
-  'frontend build must generate and strengthen route-specific public HTML',
+    && String(frontendPackage.scripts?.build || '').includes('strengthen-public-search-pages.cjs')
+    && frontendPackage.scripts?.postbuild === 'node scripts/canonicalize-public-static-paths.cjs',
+  'frontend build must generate, strengthen and canonicalize route-specific public HTML',
 );
 expect(
   startup.includes("require('./generate-public-search-pages.cjs')")
     && startup.includes("require('./strengthen-public-search-pages.cjs')")
+    && startup.includes("require('./canonicalize-public-static-paths.cjs')")
     && startup.includes("require('../server.cjs')"),
-  'production startup must regenerate, strengthen and then serve public pages',
+  'production startup must regenerate, strengthen, canonicalize and then serve public pages',
 );
 expect(
   [
@@ -60,6 +65,38 @@ expect(
   'public strengthener must cover product, pricing, demo, trust and legal routes with truthful static content',
 );
 expect(
+  [
+    "'/product'",
+    "'/pricing'",
+    "'/demo'",
+    "'/legal/privacy'",
+    "'/legal/terms'",
+    "'/refunds-cancellations'",
+    "'/privacy/': '/legal/privacy/'",
+    "'/terms/': '/legal/terms/'",
+  ].every((token) => canonicalizer.includes(token)),
+  'static canonicalizer must use live trailing-slash resources and preserve primary legal canonicals',
+);
+expect(
+  blueprint.includes('name: grassley-frontend')
+    && blueprint.includes('runtime: static')
+    && blueprint.indexOf('source: /product') < blueprint.indexOf('source: /*')
+    && blueprint.indexOf('source: /pricing') < blueprint.indexOf('source: /*')
+    && blueprint.indexOf('source: /demo') < blueprint.indexOf('source: /*')
+    && blueprint.includes('destination: /product/index.html')
+    && blueprint.includes('destination: /pricing/index.html')
+    && blueprint.includes('destination: /demo/index.html'),
+  'Render Blueprint must put exact public routes before the SPA catch-all',
+);
+expect(
+  sitemap.includes('https://www.churvox.com/product/')
+    && sitemap.includes('https://www.churvox.com/pricing/')
+    && sitemap.includes('https://www.churvox.com/demo/')
+    && sitemap.includes('https://www.churvox.com/legal/privacy/')
+    && sitemap.includes('https://www.churvox.com/legal/terms/'),
+  'sitemap must point search engines to the live route-specific static resources',
+);
+expect(
   server.includes('fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()')
     && server.includes('filePath = path.join(filePath, "index.html")'),
   'frontend server must serve generated route directories before the React fallback',
@@ -68,6 +105,7 @@ expect(
 try {
   parseableNodeScript(startup);
   parseableNodeScript(strengthener);
+  parseableNodeScript(canonicalizer);
 } catch (error) {
   failures.push(`public production scripts must parse: ${error.message}`);
 }
@@ -78,8 +116,9 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✓ frontend start regenerates route-specific public HTML');
-console.log('✓ build includes route generation and legal/trust strengthening');
+console.log('✓ frontend build and start generate route-specific public HTML');
+console.log('✓ post-build canonical URLs match Render static directory resources');
+console.log('✓ Render Blueprint places exact public routes before the SPA fallback');
+console.log('✓ sitemap points at the live route-specific pages');
 console.log('✓ route content includes product, pricing, demo, trust and legal fallbacks');
-console.log('✓ server serves generated route directories before the React fallback');
 console.log('\nPublic production route contract passed.');
