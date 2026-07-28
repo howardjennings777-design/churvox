@@ -6,34 +6,34 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/product</loc>
+    <loc>https://www.churvox.com/product/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/features</loc>
+    <loc>https://www.churvox.com/features/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/demo</loc>
+    <loc>https://www.churvox.com/demo/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/pricing</loc>
+    <loc>https://www.churvox.com/pricing/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/new-zealand</loc>
-    <lastmod>2026-07-26</lastmod>
+    <loc>https://www.churvox.com/industries/new-zealand/</loc>
+    <lastmod>2026-07-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/australia</loc>
-    <lastmod>2026-07-26</lastmod>
+    <loc>https://www.churvox.com/industries/australia/</loc>
+    <lastmod>2026-07-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
@@ -43,82 +43,87 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/lawn-care</loc>
+    <loc>https://www.churvox.com/industries/lawn-care/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/landscaping</loc>
+    <loc>https://www.churvox.com/industries/landscaping/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/cleaning</loc>
+    <loc>https://www.churvox.com/industries/cleaning/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/property-maintenance</loc>
+    <loc>https://www.churvox.com/industries/property-maintenance/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/handyman</loc>
+    <loc>https://www.churvox.com/industries/handyman/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/painting</loc>
+    <loc>https://www.churvox.com/industries/painting/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/plumbing-electrical-hvac</loc>
+    <loc>https://www.churvox.com/industries/plumbing-electrical-hvac/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/pest-control</loc>
+    <loc>https://www.churvox.com/industries/pest-control/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/industries/barber-hairdresser</loc>
+    <loc>https://www.churvox.com/industries/barber-hairdresser/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/signup</loc>
+    <loc>https://www.churvox.com/signup/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/about</loc>
+    <loc>https://www.churvox.com/about/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/security</loc>
+    <loc>https://www.churvox.com/security/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/support</loc>
+    <loc>https://www.churvox.com/support/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/contact</loc>
+    <loc>https://www.churvox.com/contact/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/legal/privacy</loc>
+    <loc>https://www.churvox.com/legal/privacy/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.churvox.com/legal/terms</loc>
+    <loc>https://www.churvox.com/legal/terms/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.churvox.com/refunds-cancellations/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
