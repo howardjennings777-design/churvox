@@ -9,8 +9,8 @@ import "./ChurvoxPremiumPublic.css";
 import "./ChurvoxPremiumScenes.css";
 import "./ChurvoxPublicContrastFixes.css";
 
-const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
-const navItems = [["/product", "Product"], ["/pricing", "Pricing"], ["/demo", "Demo"], ["/security", "Security"], ["/contact", "Contact"]];
+const DEFAULT_TRIAL_PATH = "/signup/?plan=operator";
+const navItems = [["/product/", "Product"], ["/pricing/", "Pricing"], ["/demo/", "Demo"], ["/security/", "Security"], ["/contact/", "Contact"]];
 
 const PUBLIC_COPY = new Map([
   ["Churvox access layer", "Secure sign in"],
@@ -82,8 +82,15 @@ function PublicCopyCleanup() {
   return null;
 }
 
+function withTrailingSlash(value = "") {
+  const [path, suffix = ""] = String(value).split(/(?=[?#])/u, 2);
+  if (!path || path === "/" || path.endsWith("/")) return value;
+  return `${path}/${suffix}`;
+}
+
 export function PublicNav({ active = "" }) {
   const [open, setOpen] = React.useState(false);
+  const activePath = withTrailingSlash(active);
   return <><PublicCopyCleanup /><header className="cp26Topbar cpWorldTopbar">
     <Link className="cp26Brand" to="/" aria-label="Churvox home" onClick={() => setOpen(false)}>
       <span className="cp26BrandMark"><ChurvoxLogo variant="mark" size="lg" /></span>
@@ -92,12 +99,12 @@ export function PublicNav({ active = "" }) {
     </Link>
     <button className="cpWorldMenu" type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>Menu</button>
     <nav className={`cp26NavLinks cpWorldNavLinks${open ? " open" : ""}`} aria-label="Public navigation">
-      {navItems.map(([to, label]) => <Link key={to} to={to} aria-current={active === to ? "page" : undefined} onClick={() => setOpen(false)}>{label}</Link>)}
+      {navItems.map(([to, label]) => <Link key={to} to={to} aria-current={activePath === to ? "page" : undefined} onClick={() => setOpen(false)}>{label}</Link>)}
       <a href="/testers/">Testers</a>
     </nav>
     <div className="cp26NavActions">
       <span className="cpWorldOnline"><i />Ready</span>
-      <Link className="cp26TextLink" to="/login">Log in</Link>
+      <Link className="cp26TextLink" to="/login/">Log in</Link>
       <Link className="cp26Button cp26ButtonSmall" to={DEFAULT_TRIAL_PATH}>Start free trial</Link>
     </div>
   </header></>;
@@ -116,9 +123,9 @@ export function PublicFooter() {
   return <footer className="cpWorldFooter">
     <div className="cpWorldFooterGrid">
       <div className="cpWorldFooterLead cp26FooterLead"><span className="cp26BrandMark"><ChurvoxLogo variant="mark" size="md" /></span><div><b>Churvox</b><p>Manage jobs, clients, workers, quotes and invoices in one place. Churvox prepares the admin; the owner reviews and approves.</p></div></div>
-      <div className="cpWorldFooterGroup"><b>Product</b><nav><FooterLink to="/product">Features</FooterLink><FooterLink to="/demo">Demo</FooterLink><FooterLink to="/pricing">Pricing</FooterLink><FooterLink to="/industries/landscaping">Industries</FooterLink></nav></div>
-      <div className="cpWorldFooterGroup"><b>Help and trust</b><nav><FooterLink to="/about">About</FooterLink><FooterLink to="/security">Security</FooterLink><FooterLink to="/support">Support</FooterLink><FooterLink to="/refunds-cancellations">Billing and cancellations</FooterLink><FooterLink to="/contact">Contact</FooterLink></nav></div>
-      <div className="cpWorldFooterGroup"><b>Account and legal</b><nav><FooterLink to="/login">Log in</FooterLink><FooterLink to={DEFAULT_TRIAL_PATH}>Start trial</FooterLink><FooterLink to="/legal/privacy">Privacy</FooterLink><FooterLink to="/legal/terms">Terms</FooterLink><FooterLink to="/delete-account">Delete account</FooterLink></nav></div>
+      <div className="cpWorldFooterGroup"><b>Product</b><nav><FooterLink to="/product/">Features</FooterLink><FooterLink to="/demo/">Demo</FooterLink><FooterLink to="/pricing/">Pricing</FooterLink><FooterLink to="/industries/landscaping/">Industries</FooterLink></nav></div>
+      <div className="cpWorldFooterGroup"><b>Help and trust</b><nav><FooterLink to="/about/">About</FooterLink><FooterLink to="/security/">Security</FooterLink><FooterLink to="/support/">Support</FooterLink><FooterLink to="/refunds-cancellations/">Billing and cancellations</FooterLink><FooterLink to="/contact/">Contact</FooterLink></nav></div>
+      <div className="cpWorldFooterGroup"><b>Account and legal</b><nav><FooterLink to="/login/">Log in</FooterLink><FooterLink to={DEFAULT_TRIAL_PATH}>Start trial</FooterLink><FooterLink to="/legal/privacy/">Privacy</FooterLink><FooterLink to="/legal/terms/">Terms</FooterLink><FooterLink to="/delete-account">Delete account</FooterLink></nav></div>
     </div>
     <div className="cpWorldFooterBase"><span>© {new Date().getFullYear()} Churvox · hello@churvox.com</span><span>Nothing important sends, charges, syncs or changes without owner approval.</span></div>
   </footer>;
