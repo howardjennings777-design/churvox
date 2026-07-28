@@ -49,8 +49,8 @@ replace_once(
 replace_once(
     "frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js",
     "  await ownerPage.getByRole('button', { name: 'Add client', exact: true }).click();",
-    "  await ownerPage.getByRole('button', { name: 'Add client', exact: true }).filter({ visible: true }).first().click();",
-    "target the visible primary Add client action",
+    "  await ownerPage.getByRole('button', { name: 'Add client', exact: true }).first().click();",
+    "target the primary Add client action",
 )
 
 stamp = datetime.now(timezone.utc).isoformat()
