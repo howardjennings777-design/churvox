@@ -93,6 +93,7 @@ PATCH_MODULES = [
     "churvox_job_completion_final_patch",
     "churvox_command_runs_office_patch",
     "churvox_command_runs_office_finalizer_patch",
+    "churvox_conversion_funnel_exact_route_patch",
 ]
 
 
