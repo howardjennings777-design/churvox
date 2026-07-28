@@ -188,6 +188,8 @@ async def _final_command_wrapper_marker():
 
 
 _force_install_final_command_patch()
+# Reassert the owner-visible worker Command response after the final legacy Command patch.
+_install_launch_patch('churvox_worker_command_visibility_patch')
 _remove_route('/api/command-fast-load/boot', 'GET')
 app.add_api_route('/api/command-fast-load/boot', _final_command_wrapper_marker, methods=['GET'])
 

@@ -57,7 +57,8 @@ export default function OfficeTeamWorkerRoute() {
   const quickNotes = useMemo(() => ["Running late", "Need owner check", "Extra work found", "Proof added"], []);
   const selectedProofNames = Array.from(proofFiles || []).map((file) => file.name);
   const proofNames = [...new Set([...sentProofNames, ...selectedProofNames])];
-  const showWork = viewKey === "today" || viewKey === "jobs";
+  const showToday = viewKey === "today";
+  const showJobs = viewKey === "jobs";
   const showMessages = viewKey === "messages";
   const showHelp = viewKey === "help";
   const showMe = viewKey === "settings";
@@ -179,13 +180,13 @@ export default function OfficeTeamWorkerRoute() {
 
   async function sendProof() {
     if (!hasWork || proofBusy) return;
-    if (!selectedProofNames.length && !String(note || "").trim()) {
+    if (!proofNames.length && !String(note || "").trim()) {
       addTrail("Choose at least one photo or add a proof note first.");
       return;
     }
     setProofBusy(true);
     try {
-      await sendFieldSlip("job_proof", String(note || "Worker added job proof.").trim(), selectedProofNames);
+      await sendFieldSlip("job_proof", String(note || "Worker added job proof.").trim(), proofNames);
       if (selectedProofNames.length) {
         setSentProofNames((currentNames) => [...new Set([...currentNames, ...selectedProofNames])]);
       }
@@ -258,7 +259,7 @@ export default function OfficeTeamWorkerRoute() {
       <section className="cvWorkerRoutePhone" aria-label="Churvox worker phone app">
         <header><div><span>{view.label}</span><h2>{view.title}</h2></div><strong>{hasWork ? status : "Waiting"}</strong></header>
 
-        {showWork ? <>
+        {showToday ? <>
           <article className={`cvWorkerRouteJob ${hasWork ? "" : "cvWorkerRouteEmptyJob"}`}><small>{type}</small><h3>{title}</h3><p>{detail}</p><em>{badge}</em></article>
           {viewKey === "jobs" ? <section className="cvWorkerRouteQueue" aria-label="Assigned worker jobs"><h3>Job queue</h3>{hasWork ? <>{visibleJobRows.map((row) => <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button"><span>{row[0]}</span><b>{row[1]}</b><small>{row[2]}</small></button>)}{rows.length > 8 ? <button className="cvWorkerQueueToggle" type="button" onClick={() => setShowAllJobs((value) => !value)}>{showAllJobs ? "Show fewer jobs" : `Show all ${rows.length} jobs`}{hiddenJobCount && !showAllJobs ? ` · ${hiddenJobCount} more` : ""}</button> : null}</> : <p>No assigned jobs.</p>}</section> : null}
           <div className="cvWorkerRouteSteps">{statusSteps.map((step) => <button key={step} type="button" disabled={!hasWork || Boolean(stepBusy) || proofCoachBusy} onClick={() => recordWorkerStep(step)}>{proofCoachBusy && step === "Complete" ? "Checking proof…" : stepBusy === step ? "Saving…" : step}</button>)}</div>
@@ -279,6 +280,12 @@ export default function OfficeTeamWorkerRoute() {
           {proofChecklist.length ? <section className="cvWorkerProofCoach" aria-label="Worker Proof Coach"><span>Worker Proof Coach</span><h3>Before you leave</h3><p>Churvox checks the proof needed for this exact job. Complete stays blocked until required evidence is present.</p><div>{proofChecklist.map((item) => item.proof === "confirmation" ? <label key={item.id}><input type="checkbox" checked={Boolean(proofConfirmations[item.id])} onChange={(event) => setProofConfirmations((current) => ({ ...current, [item.id]: event.target.checked }))} /><span>{item.label}</span></label> : <article key={item.id} className={(item.proof === "photo" ? proofNames.length > 0 : String(note || "").trim()) ? "ready" : "missing"}><b>{item.proof === "photo" ? proofNames.length > 0 ? "Photo ready" : "Photo needed" : String(note || "").trim() ? "Note ready" : "Note needed"}</b><span>{item.label}</span></article>)}</div><small>{proofCoach?.industry ? `Checklist: ${proofCoach.industry}` : "Trade-aware checklist"}{sentProofNames.length ? ` · ${sentProofNames.length} photo${sentProofNames.length === 1 ? "" : "s"} sent` : ""}</small></section> : null}
           <section className="cvWorkerRouteProof"><label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label><button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : selectedProofNames.length ? `Send ${selectedProofNames.length} proof item${selectedProofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button><button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button></section>
         </> : null}
+
+        {showJobs ? <section className="cvWorkerJobsWorkspace" aria-label="Assigned jobs workspace">
+            <header><div><span>Assigned work</span><h3>Job queue</h3></div><strong>{rows.length} job{rows.length === 1 ? "" : "s"}</strong></header>
+            <div className="cvWorkerRouteQueue cvWorkerJobsQueue">{hasWork ? <>{visibleJobRows.map((row) => <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button"><span>{row[0]}</span><b>{row[1]}</b><small>{row[2]}</small></button>)}{rows.length > 8 ? <button className="cvWorkerQueueToggle" type="button" onClick={() => setShowAllJobs((value) => !value)}>{showAllJobs ? "Show fewer jobs" : `Show all ${rows.length} jobs`}{hiddenJobCount && !showAllJobs ? ` · ${hiddenJobCount} more` : ""}</button> : null}</> : <p>No assigned jobs.</p>}</div>
+            {hasWork ? <article className="cvWorkerJobsSelected"><small>Selected job</small><h3>{title}</h3><p>{detail}</p><div><span>{badge}</span><span>{type}</span></div><Link className="cvWorkerJobsOpenToday" to="/worker/today">Open field actions in Today</Link></article> : null}
+          </section> : null}
 
         {showMessages ? <><section className="cvWorkerRouteNoteBox"><span>Boss update</span><h3>Send one clear update</h3><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed?" /><button type="button" disabled={updateBusy || live.isLoading} onClick={() => sendBossUpdate()}>{updateBusy ? "Sending…" : live.isLoading ? "Loading assigned job…" : "Send to Command"}</button></section><div className="cvWorkerRouteQuickNotes">{quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}</div><section className="cvWorkerRouteTrail"><h3>This phone</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No updates sent this session.</p>}</section></> : null}
         {showHelp ? <section className="cvWorkerRouteHelp"><h3>Four field rules</h3><ol><li>Open the assigned job.</li><li>Update the status when it changes.</li><li>Send proof or a short issue note.</li><li>Complete only when the work is ready for owner review.</li></ol></section> : null}

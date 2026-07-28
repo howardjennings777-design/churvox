@@ -70,7 +70,7 @@ async function uiLogin(page, email, password, role) {
   await page.goto(`${BASE_URL}/login${role === 'worker' ? '?worker=1' : ''}`, { waitUntil: 'domcontentloaded' });
   await page.getByLabel(/email/i).first().fill(email);
   await page.getByLabel(/password/i).first().fill(password);
-  await page.getByRole('button', { name: /sign in|log in/i }).first().click();
+  await page.getByRole('button', { name: /open churvox|sign in|log in/i }).first().click();
   await expect.poll(() => page.url(), {
     message: `${role} stayed on login`,
     timeout: 25_000,
@@ -166,24 +166,36 @@ async function waitForJobStatus(request, token, jobId, title, expected, label) {
   }, { message: label, timeout: 25_000, intervals: [500, 900, 1500, 2500] }).toBe(true);
 }
 
-async function fillCurrentClientForm(ownerPage, token) {
+async function createCurrentClient(ownerPage, request, ownerToken, clientName) {
   await ownerPage.goto(`${BASE_URL}/dashboard#clients`, { waitUntil: 'domcontentloaded' });
   await expect(ownerPage.locator('.cvOwnerReady')).toBeVisible({ timeout: 20_000 });
-  await ownerPage.getByLabel('Client name', { exact: true }).fill(token);
-  await ownerPage.getByLabel('Phone', { exact: true }).fill('021 555 0101');
-  await ownerPage.getByLabel('Email', { exact: true }).fill(`human-current-${Date.now()}@example.com`);
-  await ownerPage.getByLabel('Address', { exact: true }).fill('1 Human Audit Street, Wellington');
-  await ownerPage.locator('.cvDraftForm label').filter({ hasText: 'Notes / memory' }).locator('textarea').fill(`Prepared-only human audit memory ${token}`);
-
+  await ownerPage.getByRole('button', { name: 'Add client', exact: true }).click();
+  const dialog = ownerPage.getByRole('dialog', { name: /Create client/i });
+  await expect(dialog).toBeVisible({ timeout: 10_000 });
+  await dialog.getByLabel('Name', { exact: true }).fill(clientName);
+  await dialog.getByLabel('Phone', { exact: true }).fill('021 555 0101');
+  await dialog.getByLabel('Email', { exact: true }).fill(`human-current-${Date.now()}@example.com`);
+  await dialog.getByLabel('Address', { exact: true }).fill('1 Human Audit Street, Wellington');
+  await dialog.getByLabel('Access notes', { exact: true }).fill(`Human audit access note ${clientName}`);
   const responsePromise = ownerPage.waitForResponse(
-    (response) => /\/api\/command\/slips$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST',
+    (response) => /\/api\/clients(?:\/create)?$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST',
     { timeout: 25_000 },
   );
-  await ownerPage.getByRole('button', { name: 'Prepare client for approval', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Create record', exact: true }).click();
   const response = await responsePromise;
   const body = await bodyOf(response);
-  expect(response.ok(), `Preparing client Command slip failed ${response.status()}: ${JSON.stringify(body).slice(0, 900)}`).toBeTruthy();
-  return idOf(body.slip || body.data?.slip || body.data || body);
+  expect(response.ok(), `Current client drawer failed ${response.status()}: ${JSON.stringify(body).slice(0, 900)}`).toBeTruthy();
+  let clientId = idOf(body.client || body.record || body.data?.client || body.data?.record || body.data || body);
+  if (!clientId) {
+    await expect.poll(async () => {
+      const listed = await api(request, 'get', `/api/clients?ts=${Date.now()}`, ownerToken);
+      const found = rowsFrom(listed.body).find((row) => contains(row, clientName));
+      clientId = idOf(found);
+      return Boolean(clientId);
+    }, { timeout: 20_000, intervals: [500, 900, 1500, 2500] }).toBe(true);
+  }
+  await expect(ownerPage.getByText(clientName).first()).toBeVisible({ timeout: 20_000 });
+  return clientId;
 }
 
 async function clickWorkerStep(workerPage, request, workerToken, jobId, title, label, expected) {
@@ -210,6 +222,19 @@ async function closeAuditCommandItems(request, ownerToken, tokens) {
   }
 }
 
+async function cleanupClient(request, ownerToken, clientId, clientName) {
+  let id = clientId;
+  if (!id) {
+    const listed = await api(request, 'get', `/api/clients?ts=${Date.now()}`, ownerToken);
+    id = idOf(rowsFrom(listed.body).find((row) => contains(row, clientName)));
+  }
+  if (!id) return;
+  let result = await api(request, 'delete', `/api/clients/${encodeURIComponent(id)}`, ownerToken);
+  if (result.response.ok() || result.response.status() === 404) return;
+  result = await api(request, 'patch', `/api/clients/${encodeURIComponent(id)}`, ownerToken, { archived: true, status: 'archived', archive_reason: 'human current audit cleanup' });
+  expect(result.response.ok() || result.response.status() === 404, `Could not clean test client: ${result.response.status()} ${JSON.stringify(result.body).slice(0, 500)}`).toBeTruthy();
+}
+
 async function cleanupJob(request, ownerToken, jobId) {
   if (!jobId) return;
   let result = await api(request, 'delete', `/api/jobs/${encodeURIComponent(jobId)}`, ownerToken);
@@ -230,10 +255,10 @@ test.describe('Current Churvox human owner-worker flow', () => {
     const workerToken = await apiLogin(request, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
     const worker = await findWorker(request, ownerToken);
     const run = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
-    const preparedToken = `HUMAN CURRENT PREPARED CLIENT ${run}`;
+    const preparedToken = `HUMAN CURRENT CLIENT ${run}`;
     const issueToken = `HUMAN CURRENT WORKER ISSUE ${run}: extra work needs owner decision`;
     let jobId = '';
-    let preparedSlipId = '';
+    let clientId = '';
 
     const ownerContext = await browser.newContext({ serviceWorkers: 'block' });
     const workerContext = await browser.newContext({ serviceWorkers: 'block' });
@@ -241,15 +266,9 @@ test.describe('Current Churvox human owner-worker flow', () => {
     const workerPage = await workerContext.newPage();
 
     try {
-      await test.step('Owner logs in and prepares a real current client Command slip', async () => {
+      await test.step('Owner logs in and creates a real client through the current drawer', async () => {
         await seedVerifiedSession(ownerPage, ownerToken, OWNER_EMAIL, 'owner');
-        preparedSlipId = await fillCurrentClientForm(ownerPage, preparedToken);
-        await ownerPage.goto(`${BASE_URL}/dashboard#command`, { waitUntil: 'domcontentloaded' });
-        await expect.poll(async () => (await ownerPage.locator('body').innerText()).includes(preparedToken), {
-          message: 'Prepared client slip did not appear in owner Command',
-          timeout: 25_000,
-          intervals: [500, 900, 1500, 2500],
-        }).toBe(true);
+        clientId = await createCurrentClient(ownerPage, request, ownerToken, preparedToken);
       });
 
       const job = await test.step('Owner creates one isolated live job assigned to the discovered worker', async () => createAssignedJob(request, ownerToken, worker, run));
@@ -316,9 +335,7 @@ test.describe('Current Churvox human owner-worker flow', () => {
       });
     } finally {
       await closeAuditCommandItems(request, ownerToken, [preparedToken, issueToken, `HUMAN CURRENT JOB ${run}`]);
-      if (preparedSlipId) {
-        await api(request, 'post', `/api/command/slips/${encodeURIComponent(preparedSlipId)}/ignore`, ownerToken, { action: 'Ignore', note: 'Human audit cleanup' });
-      }
+      await cleanupClient(request, ownerToken, clientId, preparedToken);
       await cleanupJob(request, ownerToken, jobId);
       await workerContext.close();
       await ownerContext.close();

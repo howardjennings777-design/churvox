@@ -69,7 +69,7 @@ async function uiLogin(page, email, password, role) {
   await page.goto(`${BASE_URL}/login${role === 'worker' ? '?worker=1' : ''}`, { waitUntil: 'domcontentloaded' });
   await page.getByLabel(/email/i).first().fill(email);
   await page.getByLabel(/password/i).first().fill(password);
-  await page.getByRole('button', { name: /sign in|log in/i }).first().click();
+  await page.getByRole('button', { name: /open churvox|sign in|log in/i }).first().click();
   await expect.poll(() => page.url(), {
     message: `${role} stayed on login`,
     timeout: 30_000,

@@ -244,7 +244,7 @@
 .cvsEmpty div { display: grid; gap: 4px; }
 .cvsEmpty b { font-family: "Manrope", sans-serif; }
 .cvsEmpty p { margin: 0; color: #727772; font-size: 12px; }
-.cvsEmpty button { display: inline-flex; align-items: center; gap: 6px; width: fit-content; margin-top: 5px; padding: 0; border: 0; background: transparent; color: var(--cvs-orange-deep); cursor: pointer; font-size: 11px; font-weight: 800; }
+.cvsEmpty button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; min-height: 44px; margin-top: 7px; padding: 0 12px; border: 1px solid rgba(217,79,23,.28); border-radius: 9px; background: rgba(255,255,255,.62); color: var(--cvs-orange-deep); cursor: pointer; font-size: 11px; font-weight: 800; }
 
 .cvsRecordLine { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 58px; padding: 10px 2px; border: 0; border-bottom: 1px solid var(--cvs-line); background: transparent; cursor: pointer; text-align: left; }
 .cvsRecordLine:hover { padding-right: 8px; padding-left: 8px; background: rgba(255,255,255,.5); }
@@ -315,7 +315,7 @@
 .cvsDecisionLane button b { font-size: 12px; }
 .cvsDecisionLane button small { color: #72766f; font-size: 10px; }
 .cvsDecisionLane footer { padding-top: 14px; }
-.cvsDecisionLane footer button { display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; background: transparent; color: var(--cvs-orange-deep); cursor: pointer; font-size: 11px; font-weight: 800; }
+.cvsDecisionLane footer button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--cvs-orange-deep); cursor: pointer; font-size: 11px; font-weight: 800; }
 
 .cvsCrewRadar { display: flex; flex-direction: column; min-width: 0; padding: 22px; background: #f7f5ef; }
 .cvsRadarCanvas { position: relative; min-height: 285px; margin: 15px 0; border: 1px solid var(--cvs-line); background: radial-gradient(circle at center, rgba(21,154,131,.08), transparent 62%), #eff1eb; overflow: hidden; }
