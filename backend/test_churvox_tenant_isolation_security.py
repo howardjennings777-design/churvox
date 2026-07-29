@@ -87,21 +87,25 @@ class FakeDB:
 
 class TenantIsolationSecurityTests(unittest.TestCase):
     def setUp(self):
+        # This is the definitive query installed at backend boot.
+        security.strict_business_query = payment_security.strict_business_scope
         self.owner_a = {'id': 'owner-a', 'business_id': 'business-a', 'email': 'same@example.test', 'role': 'owner'}
         self.owner_b = {'id': 'owner-b', 'business_id': 'business-b', 'email': 'same@example.test', 'role': 'owner'}
 
     def test_business_scope_uses_tenant_ids_not_contact_email(self):
-        query = security.strict_business_query(self.owner_a, FakeObjectId)
+        query = payment_security.strict_business_scope(self.owner_a, FakeObjectId)
         self.assertTrue(matches({'business_id': 'business-a', 'email': 'other@example.test'}, query))
         self.assertFalse(matches({'business_id': 'business-b', 'email': 'same@example.test'}, query))
+        self.assertFalse(matches({'business_id': 'business-b', 'owner_id': 'owner-a'}, query))
         self.assertFalse(matches({'email': 'same@example.test'}, query))
         self.assertNotIn('email', repr(query))
+        self.assertNotIn('owner_id', repr(query))
         self.assertNotIn('$exists', repr(query))
 
     def test_direct_record_query_rejects_other_tenant_even_when_id_matches(self):
         query = security.strict_record_query(self.owner_a, FakeObjectId, 'record-1', ('id', 'job_id'))
         self.assertTrue(matches({'id': 'record-1', 'business_id': 'business-a'}, query))
-        self.assertFalse(matches({'id': 'record-1', 'business_id': 'business-b'}, query))
+        self.assertFalse(matches({'id': 'record-1', 'business_id': 'business-b', 'owner_id': 'owner-a'}, query))
         self.assertFalse(matches({'id': 'record-1'}, query))
 
     def test_cors_rejects_arbitrary_hosting_domains(self):
@@ -124,6 +128,13 @@ class TenantIsolationSecurityTests(unittest.TestCase):
             'owner_email': 'other@example.test',
         })
         self.assertEqual(clean, {'title': 'Safe job'})
+
+    def test_owner_interceptor_does_not_capture_public_routes(self):
+        self.assertFalse(payment_security.owner_route('/api/auth/register', 'POST'))
+        self.assertFalse(payment_security.owner_route('/api/public/customer-request', 'POST'))
+        self.assertTrue(payment_security.owner_route('/api/jobs', 'GET'))
+        self.assertTrue(payment_security.owner_route('/api/clients/client-1', 'PATCH'))
+        self.assertFalse(payment_security.owner_route('/api/jobs/job-1/start', 'POST'))
 
     def test_sensitive_paths_are_claimed_by_security_layer(self):
         self.assertEqual(security.parse_sensitive_path('/api/records/job/abc', 'DELETE'), ('delete', 'job', 'abc'))
@@ -172,6 +183,7 @@ class TenantIsolationSecurityTests(unittest.TestCase):
             self.assertTrue(payment_security.install())
             self.assertEqual(payments.first_existing_connected_account(object()), '')
             self.assertIs(payments.payment_account, payment_security.secure_payment_account)
+            self.assertIs(security.strict_business_query, payment_security.strict_business_scope)
         finally:
             sys.modules.pop('churvox_on_site_payments_patch', None)
 
