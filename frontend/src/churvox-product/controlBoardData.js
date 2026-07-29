@@ -176,71 +176,165 @@ function mergeCommandRows(...groups) {
   return merged;
 }
 
+// CHURVOX_FAST_CONTROL_BOARD_20260729
+const EMPTY_CONTROL_BOARD = Object.freeze({ jobs: [], clients: [], workers: [], quotes: [], invoices: [], messages: [], command: [], xero: {} });
+const AUTO_REFRESH_WINDOW_MS = 20_000;
+const sharedBoards = new Map();
+
+function boardScope() {
+  if (typeof window === "undefined") return "server";
+  let value = "cookie-session";
+  try { value = window.localStorage.getItem("token") || value; } catch {}
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function sharedBoard(scope) {
+  if (!sharedBoards.has(scope)) {
+    sharedBoards.set(scope, {
+      data: { ...EMPTY_CONTROL_BOARD },
+      failures: [],
+      ready: false,
+      updatedAt: 0,
+      inFlight: null,
+      listeners: new Set(),
+    });
+  }
+  return sharedBoards.get(scope);
+}
+
+function notifyBoard(board) {
+  const snapshot = { data: board.data, failures: board.failures, ready: board.ready, updatedAt: board.updatedAt };
+  board.listeners.forEach((listener) => listener(snapshot));
+}
+
+function setBoardFailure(board, source, failure) {
+  const remaining = board.failures.filter((item) => item.source !== source);
+  board.failures = failure ? [...remaining, failure] : remaining;
+  publishControlBoardHealth(board.failures);
+}
+
+function updateBoard(board, patch, { source = "", failure = null, ready = board.ready } = {}) {
+  board.data = { ...board.data, ...patch };
+  board.ready = ready;
+  board.updatedAt = Date.now();
+  if (source) setBoardFailure(board, source, failure);
+  notifyBoard(board);
+}
+
+async function loadBoard(board, api) {
+  const coreSources = [
+    { source: "Work", endpoint: "/jobs", field: "jobs", key: "jobs", type: "jobs" },
+    { source: "Clients", endpoint: "/clients", field: "clients", key: "clients", type: "clients" },
+    { source: "Team", endpoint: "/team", field: "workers", key: "team", type: "workers" },
+    { source: "Quotes", endpoint: "/quotes", field: "quotes", key: "quotes", type: "quotes" },
+    { source: "Invoices", endpoint: "/invoices", field: "invoices", key: "invoices", type: "invoices" },
+  ];
+
+  await Promise.allSettled(coreSources.map(async (source) => {
+    let result;
+    try {
+      result = { status: "fulfilled", value: await api.get(source.endpoint) };
+    } catch (reason) {
+      result = { status: "rejected", reason };
+    }
+    const failure = sourceFailure(result, source.source);
+    const patch = failure ? {} : { [source.field]: normalize(rowsFrom(result.value, source.key), source.type) };
+    updateBoard(board, patch, { source: source.source, failure, ready: true });
+  }));
+
+  const background = await Promise.allSettled([
+    api.get("/messages"),
+    api.get("/ai/actions"),
+    api.get("/command/slips"),
+    api.get("/xero/status"),
+  ]);
+
+  const messagesOkay = resultOkay(background[0]);
+  const actionOkay = resultOkay(background[1]);
+  const slipsOkay = resultOkay(background[2]);
+  const xeroOkay = resultOkay(background[3]);
+  const messageCommandRows = messagesOkay ? ownerReviewRows(background[0].value) : [];
+  const actionCommandRows = actionOkay ? rowsFrom(background[1].value, "actions") : [];
+  const liveCommandSlipRows = slipsOkay ? commandSlipRows(background[2].value) : [];
+  const commandRows = mergeCommandRows(liveCommandSlipRows, actionCommandRows, messageCommandRows);
+  const messagesFailure = sourceFailure(background[0], "Messages");
+  const commandFailure = (!messagesOkay && !actionOkay && !slipsOkay)
+    ? (sourceFailure(background[1], "Command") || sourceFailure(background[2], "Command") || { source: "Command", message: "Connection failed" })
+    : null;
+
+  setBoardFailure(board, "Messages", messagesFailure);
+  setBoardFailure(board, "Command", commandFailure);
+  const xero = xeroOkay ? (unwrap(background[3].value) || {}) : board.data.xero;
+  updateBoard(board, {
+    messages: messagesOkay ? normalize(rowsFrom(background[0].value, "messages"), "messages") : board.data.messages,
+    command: (messagesOkay || actionOkay || slipsOkay) ? normalize(commandRows, "command") : board.data.command,
+    xero: xeroOkay ? { connected: Boolean(xero.connected || xero.xero_connected), tenant: pick(xero, "tenant_name", "tenantName", "organisation_name"), status: pick(xero, "status") } : board.data.xero,
+  });
+}
+
 export function useControlBoardData(enabled) {
   const api = useApi();
-  const refreshRun = React.useRef(0);
-  const [loading, setLoading] = React.useState(Boolean(enabled));
-  const [failures, setFailures] = React.useState([]);
-  const [data, setData] = React.useState({ jobs: [], clients: [], workers: [], quotes: [], invoices: [], messages: [], command: [], xero: {} });
+  const scope = React.useMemo(boardScope, []);
+  const board = React.useMemo(() => sharedBoard(scope), [scope]);
+  const [loading, setLoading] = React.useState(Boolean(enabled && !board.ready));
+  const [failures, setFailures] = React.useState(board.failures);
+  const [data, setData] = React.useState(board.data);
 
-  const refresh = React.useCallback(async () => {
-    const run = ++refreshRun.current;
+  React.useEffect(() => {
+    const receive = (snapshot) => {
+      setData(snapshot.data);
+      setFailures(snapshot.failures);
+      if (snapshot.ready) setLoading(false);
+    };
+    board.listeners.add(receive);
+    receive(board);
+    return () => board.listeners.delete(receive);
+  }, [board]);
+
+  const refresh = React.useCallback(async (options = {}) => {
     if (!enabled) {
       setLoading(false);
       setFailures([]);
       publishControlBoardHealth([]);
       return;
     }
-    setLoading(true);
-    try {
-      const results = await Promise.allSettled([
-        api.get("/jobs"), api.get("/clients"), api.get("/team"), api.get("/quotes"), api.get("/invoices"), api.get("/messages"), api.get("/ai/actions"), api.get("/command/slips"), api.get("/xero/status"),
-      ]);
-      if (run !== refreshRun.current) return;
 
-      const messagesOkay = resultOkay(results[5]);
-      const actionOkay = resultOkay(results[6]);
-      const slipsOkay = resultOkay(results[7]);
-      const messageCommandRows = messagesOkay ? ownerReviewRows(results[5].value) : [];
-      const actionCommandRows = actionOkay ? rowsFrom(results[6].value, "actions") : [];
-      const liveCommandSlipRows = slipsOkay ? commandSlipRows(results[7].value) : [];
-      const commandRows = mergeCommandRows(liveCommandSlipRows, actionCommandRows, messageCommandRows);
-
-      const issues = SOURCES.map(([label], index) => sourceFailure(results[index], label))
-        .filter(Boolean)
-        .filter((issue) => issue.source !== "Command" || (!messagesOkay && !slipsOkay));
-      const failed = new Set(issues.map((item) => item.source));
-      setFailures(issues);
-      publishControlBoardHealth(issues);
-      setData((current) => {
-        const xeroResult = results[8];
-        const xeroOkay = resultOkay(xeroResult);
-        const xero = xeroOkay ? (unwrap(xeroResult.value) || {}) : current.xero;
-        return {
-          jobs: failed.has("Work") ? current.jobs : normalize(rowsFrom(results[0]?.value, "jobs"), "jobs"),
-          clients: failed.has("Clients") ? current.clients : normalize(rowsFrom(results[1]?.value, "clients"), "clients"),
-          workers: failed.has("Team") ? current.workers : normalize(rowsFrom(results[2]?.value, "team"), "workers"),
-          quotes: failed.has("Quotes") ? current.quotes : normalize(rowsFrom(results[3]?.value, "quotes"), "quotes"),
-          invoices: failed.has("Invoices") ? current.invoices : normalize(rowsFrom(results[4]?.value, "invoices"), "invoices"),
-          messages: failed.has("Messages") ? current.messages : normalize(rowsFrom(results[5]?.value, "messages"), "messages"),
-          command: (messagesOkay || actionOkay || slipsOkay) ? normalize(commandRows, "command") : current.command,
-          xero: xeroOkay ? { connected: Boolean(xero.connected || xero.xero_connected), tenant: pick(xero, "tenant_name", "tenantName", "organisation_name"), status: pick(xero, "status") } : current.xero,
-        };
-      });
-    } finally {
-      if (run === refreshRun.current) setLoading(false);
+    const force = options?.force !== false;
+    if (!force && board.updatedAt && Date.now() - board.updatedAt < AUTO_REFRESH_WINDOW_MS) {
+      setLoading(false);
+      return;
     }
-  }, [api, enabled]);
+    if (!board.ready) setLoading(true);
+    if (!board.inFlight) {
+      board.inFlight = loadBoard(board, api).finally(() => {
+        board.inFlight = null;
+        if (!board.ready) {
+          board.ready = true;
+          notifyBoard(board);
+        }
+      });
+    }
+    await board.inFlight;
+  }, [api, board, enabled]);
 
   React.useEffect(() => {
-    refresh();
-    window.addEventListener("churvox:data-refresh", refresh);
-    window.addEventListener("hashchange", refresh);
-    return () => {
-      window.removeEventListener("churvox:data-refresh", refresh);
-      window.removeEventListener("hashchange", refresh);
+    refresh({ force: false });
+    const refreshAfterChange = () => refresh({ force: true });
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible" && Date.now() - board.updatedAt > AUTO_REFRESH_WINDOW_MS) refresh({ force: false });
     };
-  }, [refresh]);
+    window.addEventListener("churvox:data-refresh", refreshAfterChange);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("churvox:data-refresh", refreshAfterChange);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [board, refresh]);
 
   return { api, data, loading, failures, refresh };
 }

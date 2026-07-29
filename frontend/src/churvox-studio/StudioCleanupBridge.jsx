@@ -82,8 +82,7 @@ function repairSettings(root) {
   });
 }
 
-function applyCleanup() {
-  const root = document.querySelector('main[data-churvox-layout="fresh-studio"]');
+function applyCleanup(root) {
   if (!root) return;
   root.classList.add("cvPlainBusinessCopy");
   replaceCopy(root);
@@ -94,23 +93,23 @@ function applyCleanup() {
 
 export default function StudioCleanupBridge() {
   React.useEffect(() => {
+    const root = document.querySelector('main[data-churvox-layout="fresh-studio"]');
+    if (!root) return undefined;
     let frame = 0;
     const schedule = () => {
       if (frame) return;
       frame = window.requestAnimationFrame(() => {
         frame = 0;
-        applyCleanup();
+        applyCleanup(root);
       });
     };
     schedule();
     const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    observer.observe(root, { childList: true, subtree: true, characterData: true });
     window.addEventListener("hashchange", schedule);
-    window.addEventListener("resize", schedule);
     return () => {
       observer.disconnect();
       window.removeEventListener("hashchange", schedule);
-      window.removeEventListener("resize", schedule);
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, []);
