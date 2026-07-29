@@ -1,7 +1,12 @@
 import axios from "axios";
 
 const OWNER_LOGIN_PATH = "/api/auth/login";
-const SERVICE_ERROR_STATUS = 520;
+const LOGGED_OUT_MARKER = "churvox:logged-out";
+const CONFIRMED_LOGIN_NAVIGATION = "churvox:confirmed-login-navigation";
+// Keep temporary owner-login failures on a standard retryable 5xx status.
+// AuthContext retries 503 responses; changing them to a custom 520 stopped
+// after the first Render failure even though the diagnostic said retryable.
+const SERVICE_ERROR_STATUS = 503;
 const OWNER_LOGIN_TIMEOUT_MS = 30000;
 const SERVICE_MESSAGE = "Churvox login is temporarily unavailable while the service restarts. Please try again shortly.";
 
@@ -12,6 +17,19 @@ function requestPath(config = {}) {
     return String(config.url || "");
   }
 }
+
+function clearConfirmedLoginNavigation() {
+  if (typeof window === "undefined") return;
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    if (params.get("logged_out") === "1") return;
+    if (window.sessionStorage.getItem(CONFIRMED_LOGIN_NAVIGATION) !== "1") return;
+    window.sessionStorage.removeItem(LOGGED_OUT_MARKER);
+    window.sessionStorage.removeItem(CONFIRMED_LOGIN_NAVIGATION);
+  } catch {}
+}
+
+clearConfirmedLoginNavigation();
 
 axios.interceptors.request.use((config) => {
   const path = requestPath(config || {});
@@ -26,7 +44,19 @@ axios.interceptors.request.use((config) => {
 });
 
 axios.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const path = requestPath(response?.config || {});
+    if (path.endsWith(OWNER_LOGIN_PATH)) {
+      try {
+        window.sessionStorage.removeItem(LOGGED_OUT_MARKER);
+        // LoginPage performs a full secure route replacement after session
+        // confirmation. Carry success across that one navigation so a stale
+        // logout marker cannot be recreated on the fresh dashboard document.
+        window.sessionStorage.setItem(CONFIRMED_LOGIN_NAVIGATION, "1");
+      } catch {}
+    }
+    return response;
+  },
   (error) => {
     const path = requestPath(error?.config || {});
     const status = Number(error?.response?.status || 0);
