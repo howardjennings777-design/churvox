@@ -159,6 +159,14 @@ def install(module):
     except Exception as exc:
         print(f"Churvox tenant payment isolation skipped: {exc}", file=sys.stderr)
 
+    # Add the final role boundary: owner exports and Xero stay owner-only,
+    # workers can mutate only assigned jobs, and public proof uses bearer tokens.
+    try:
+        import churvox_role_and_share_isolation_patch
+        churvox_role_and_share_isolation_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox role/share isolation skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
