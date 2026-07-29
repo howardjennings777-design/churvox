@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 import churvox_tenant_isolation_security_patch as tenant
@@ -34,6 +35,20 @@ def owner_only_path(path: str, method: str) -> bool:
     if path.startswith("/api/xero/") and path != "/api/xero/callback":
         return True
     return False
+
+
+def xero_state_recent(saved: Dict[str, Any] | None, now: datetime | None = None, max_age_seconds: int = 600) -> bool:
+    saved = saved or {}
+    created = saved.get("created_at")
+    if not isinstance(created, datetime):
+        return False
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    age = (now - created).total_seconds()
+    return 0 <= age <= max_age_seconds
 
 
 def valid_public_token(token: str) -> bool:
@@ -193,6 +208,27 @@ def install(module):
             token_value = path.split("/api/public/proof/", 1)[-1]
             return tenant.apply_cors(await secure_public_proof(module, request, token_value), request)
 
+        if path == "/api/xero/callback" and method == "GET":
+            state = tenant.text(request.query_params.get("state"), 300)
+            if state:
+                try:
+                    saved = await module.db.xero_oauth_states.find_one({"state": state, "used": False})
+                except Exception:
+                    saved = None
+                if saved and not xero_state_recent(saved):
+                    try:
+                        await module.db.xero_oauth_states.update_one(
+                            {"_id": saved.get("_id")},
+                            {"$set": {"used": True, "expired": True, "updated_at": datetime.now(timezone.utc)}},
+                        )
+                    except Exception:
+                        pass
+                    frontend = tenant.text(getattr(module, "FRONTEND_URL", "https://www.churvox.com")).rstrip("/")
+                    RedirectResponse = getattr(module, "RedirectResponse", None)
+                    if RedirectResponse is not None:
+                        return RedirectResponse(f"{frontend}/dashboard?xero_error=expired_state#xero", status_code=307)
+                    return tenant.apply_cors(JSONResponse({"success": False, "detail": "Xero connection state expired"}, status_code=400), request)
+
         needs_user = (
             owner_only_path(path, method)
             or (path == "/api/offline-sync" and method == "POST")
@@ -226,5 +262,5 @@ def install(module):
 
 __all__ = [
     "VERSION", "install", "owner_only_path", "valid_public_token",
-    "worker_role", "worker_job_allowed", "secure_public_proof",
+    "worker_role", "worker_job_allowed", "secure_public_proof", "xero_state_recent",
 ]
