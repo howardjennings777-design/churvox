@@ -141,6 +141,40 @@ def install(module):
     except Exception as exc:
         print(f"Churvox wiring health skipped: {exc}", file=sys.stderr)
 
+    # Install the definitive tenant boundary after all compatibility readers.
+    # This makes the security guard the outermost API layer and prevents an
+    # older route or middleware from widening ownership or CORS rules again.
+    try:
+        import churvox_tenant_isolation_security_patch
+        churvox_tenant_isolation_security_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox tenant isolation security skipped: {exc}", file=sys.stderr)
+
+    # Reassert the business-only Stripe Connect resolver after the broad API
+    # guard. Workers inherit their business owner's account, never a global one.
+    try:
+        import churvox_tenant_payment_isolation_patch
+        churvox_tenant_payment_isolation_patch.install(module)
+        globals()["payment_account"] = churvox_tenant_payment_isolation_patch.secure_payment_account
+    except Exception as exc:
+        print(f"Churvox tenant payment isolation skipped: {exc}", file=sys.stderr)
+
+    # Add the final role boundary: owner exports and Xero stay owner-only,
+    # workers can mutate only assigned jobs, and public proof uses bearer tokens.
+    try:
+        import churvox_role_and_share_isolation_patch
+        churvox_role_and_share_isolation_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox role/share isolation skipped: {exc}", file=sys.stderr)
+
+    # Tighten diagnostic payment status and strip internal photo metadata from
+    # public proof shares after the role/share middleware is installed.
+    try:
+        import churvox_security_final_tightening_patch
+        churvox_security_final_tightening_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox final security tightening skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
@@ -170,6 +204,7 @@ class Finder(importlib.abc.MetaPathFinder):
 
 if not any(isinstance(f, Finder) for f in sys.meta_path):
     sys.meta_path.insert(0, Finder())
+
 
 for module_name in list(TARGETS):
     loaded = sys.modules.get(module_name)
