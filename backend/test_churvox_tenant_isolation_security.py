@@ -10,6 +10,7 @@ if str(BACKEND_DIR) not in sys.path:
 
 import churvox_tenant_isolation_security_patch as security
 import churvox_tenant_payment_isolation_patch as payment_security
+import churvox_role_and_share_isolation_patch as role_security
 
 
 class FakeObjectId:
@@ -29,6 +30,13 @@ class FakeObjectId:
 
     def __hash__(self):
         return hash(self.value)
+
+
+class FakeJSONResponse:
+    def __init__(self, content, status_code=200):
+        self.content = content
+        self.status_code = status_code
+        self.headers = {}
 
 
 def field_value(doc, dotted):
@@ -187,10 +195,62 @@ class TenantIsolationSecurityTests(unittest.TestCase):
         finally:
             sys.modules.pop('churvox_on_site_payments_patch', None)
 
+    def test_accounting_exports_and_xero_are_owner_only(self):
+        self.assertTrue(role_security.owner_only_path('/api/accounting/export/pack', 'GET'))
+        self.assertTrue(role_security.owner_only_path('/api/accounting/bookkeeper', 'GET'))
+        self.assertTrue(role_security.owner_only_path('/api/xero/status', 'GET'))
+        self.assertFalse(role_security.owner_only_path('/api/xero/callback', 'GET'))
+        self.assertFalse(role_security.owner_only_path('/api/worker/jobs', 'GET'))
+
+    def test_public_proof_requires_real_bearer_token(self):
+        self.assertFalse(role_security.valid_public_token('123'))
+        self.assertFalse(role_security.valid_public_token('ordinary-record-id'))
+        self.assertTrue(role_security.valid_public_token('a' * 32))
+        collection = FakeCollection([
+            {
+                'id': 'guessable-id',
+                'public_token': 'a' * 32,
+                'business_id': 'business-a',
+                'owner_id': 'owner-a',
+                'job_title': 'Safe proof',
+                'customer_name': 'Customer',
+                'photos': [],
+            }
+        ])
+        module = types.SimpleNamespace(
+            JSONResponse=FakeJSONResponse,
+            db=FakeDB(job_proof_packs=collection),
+        )
+        missing = asyncio.run(role_security.secure_public_proof(module, None, 'ordinary-record-id'))
+        self.assertEqual(missing.status_code, 404)
+        response = asyncio.run(role_security.secure_public_proof(module, None, 'a' * 32))
+        self.assertEqual(response.status_code, 200)
+        proof = response.content['proof_pack']
+        self.assertNotIn('business_id', proof)
+        self.assertNotIn('owner_id', proof)
+        self.assertNotIn('public_token', proof)
+        self.assertNotIn('id', repr(collection.last_query))
+
+    def test_worker_can_access_only_assigned_job(self):
+        jobs = FakeCollection([
+            {'id': 'job-b', 'business_id': 'business-b', 'assigned_worker_id': 'worker-a'},
+            {'id': 'job-other', 'business_id': 'business-a', 'assigned_worker_id': 'worker-b'},
+            {'id': 'job-own', 'business_id': 'business-a', 'assigned_worker_id': 'worker-a'},
+        ])
+        module = types.SimpleNamespace(
+            ObjectId=FakeObjectId,
+            db=FakeDB(jobs=jobs, job_records=FakeCollection([]), business_jobs=FakeCollection([])),
+        )
+        worker = {'id': 'worker-a', 'business_id': 'business-a', 'role': 'worker'}
+        self.assertTrue(asyncio.run(role_security.worker_job_allowed(module, worker, 'job-own')))
+        self.assertFalse(asyncio.run(role_security.worker_job_allowed(module, worker, 'job-other')))
+        self.assertFalse(asyncio.run(role_security.worker_job_allowed(module, worker, 'job-b')))
+
     def test_security_patches_are_wired_into_backend_boot(self):
         terminal = (BACKEND_DIR / 'churvox_terminal_reader_patch.py').read_text(encoding='utf-8')
         self.assertIn('churvox_tenant_isolation_security_patch.install(module)', terminal)
         self.assertIn('churvox_tenant_payment_isolation_patch.install(module)', terminal)
+        self.assertIn('churvox_role_and_share_isolation_patch.install(module)', terminal)
         self.assertIn('globals()["payment_account"]', terminal)
 
 
