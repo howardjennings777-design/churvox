@@ -150,6 +150,15 @@ def install(module):
     except Exception as exc:
         print(f"Churvox tenant isolation security skipped: {exc}", file=sys.stderr)
 
+    # Reassert the business-only Stripe Connect resolver after the broad API
+    # guard. Workers inherit their business owner's account, never a global one.
+    try:
+        import churvox_tenant_payment_isolation_patch
+        churvox_tenant_payment_isolation_patch.install(module)
+        globals()["payment_account"] = churvox_tenant_payment_isolation_patch.secure_payment_account
+    except Exception as exc:
+        print(f"Churvox tenant payment isolation skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
