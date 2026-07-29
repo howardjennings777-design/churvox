@@ -167,6 +167,14 @@ def install(module):
     except Exception as exc:
         print(f"Churvox role/share isolation skipped: {exc}", file=sys.stderr)
 
+    # Tighten diagnostic payment status and strip internal photo metadata from
+    # public proof shares after the role/share middleware is installed.
+    try:
+        import churvox_security_final_tightening_patch
+        churvox_security_final_tightening_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox final security tightening skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
