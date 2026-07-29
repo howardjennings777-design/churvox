@@ -3,17 +3,39 @@ from __future__ import annotations
 import importlib
 import sys
 
+import churvox_tenant_isolation_security_patch as tenant_security
 from churvox_tenant_isolation_security_patch import (
     OWNER_ROLES,
+    OWNERSHIP_FIELDS,
     business_id,
     is_owner,
-    strict_business_query,
     text,
     user_id,
     variants,
 )
 
-VERSION = "churvox-tenant-payment-isolation-20260729-v1"
+VERSION = "churvox-tenant-payment-isolation-20260729-v2"
+
+
+def strict_business_scope(user, ObjectId):
+    values = variants(ObjectId, business_id(user))
+    if not values:
+        return {"_id": "__tenant_missing__"}
+    # A record with an explicit business id must match that id. Owner/user ids and
+    # email fields are never allowed to override a different tenant id.
+    return {"$or": [{field: {"$in": values}} for field in OWNERSHIP_FIELDS]}
+
+
+def owner_route(path, method):
+    method = str(method or "").upper()
+    for kind in tenant_security.OWNER_DATA:
+        base = f"/api/{kind}"
+        if path == base and method in {"GET", "POST"}:
+            return True
+        if path.startswith(f"{base}/") and method in {"PATCH", "PUT"}:
+            remainder = path[len(base) + 1:]
+            return bool(remainder and ("/" not in remainder or remainder.endswith("/field-update")))
+    return False
 
 
 async def secure_find_owner(db, user, ObjectId):
@@ -33,7 +55,7 @@ async def secure_find_owner(db, user, ObjectId):
 
     query = {
         "$and": [
-            strict_business_query(user, ObjectId),
+            strict_business_scope(user, ObjectId),
             {"role": {"$in": sorted(OWNER_ROLES)}},
         ]
     }
@@ -64,6 +86,18 @@ async def secure_payment_account(db, user, ObjectId):
 
 
 def install(_legacy_module=None):
+    # Strengthen the shared tenant query and keep public API routes out of the
+    # owner-data interceptor before the middleware processes any request.
+    original_owner_data = tenant_security.secure_owner_data
+
+    async def filtered_owner_data(module, request, path, method):
+        if not owner_route(path, method):
+            return None
+        return await original_owner_data(module, request, path, method)
+
+    tenant_security.strict_business_query = strict_business_scope
+    tenant_security.secure_owner_data = filtered_owner_data
+
     try:
         payments = importlib.import_module("churvox_on_site_payments_patch")
     except Exception:
@@ -85,4 +119,7 @@ def install(_legacy_module=None):
     return True
 
 
-__all__ = ["VERSION", "install", "secure_find_owner", "secure_payment_account"]
+__all__ = [
+    "VERSION", "install", "strict_business_scope", "owner_route",
+    "secure_find_owner", "secure_payment_account",
+]
