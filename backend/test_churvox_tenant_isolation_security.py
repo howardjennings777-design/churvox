@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
 import pathlib
 import sys
 import types
@@ -201,6 +202,13 @@ class TenantIsolationSecurityTests(unittest.TestCase):
         self.assertTrue(role_security.owner_only_path('/api/xero/status', 'GET'))
         self.assertFalse(role_security.owner_only_path('/api/xero/callback', 'GET'))
         self.assertFalse(role_security.owner_only_path('/api/worker/jobs', 'GET'))
+
+    def test_xero_oauth_state_expires_after_ten_minutes(self):
+        now = datetime(2026, 7, 29, 1, 0, tzinfo=timezone.utc)
+        self.assertTrue(role_security.xero_state_recent({'created_at': now - timedelta(minutes=9)}, now=now))
+        self.assertFalse(role_security.xero_state_recent({'created_at': now - timedelta(minutes=11)}, now=now))
+        self.assertFalse(role_security.xero_state_recent({'created_at': now + timedelta(seconds=1)}, now=now))
+        self.assertFalse(role_security.xero_state_recent({}, now=now))
 
     def test_public_proof_requires_real_bearer_token(self):
         self.assertFalse(role_security.valid_public_token('123'))
