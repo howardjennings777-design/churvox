@@ -141,6 +141,15 @@ def install(module):
     except Exception as exc:
         print(f"Churvox wiring health skipped: {exc}", file=sys.stderr)
 
+    # Install the definitive tenant boundary after all compatibility readers.
+    # This makes the security guard the outermost API layer and prevents an
+    # older route or middleware from widening ownership or CORS rules again.
+    try:
+        import churvox_tenant_isolation_security_patch
+        churvox_tenant_isolation_security_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox tenant isolation security skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
@@ -170,6 +179,7 @@ class Finder(importlib.abc.MetaPathFinder):
 
 if not any(isinstance(f, Finder) for f in sys.meta_path):
     sys.meta_path.insert(0, Finder())
+
 
 for module_name in list(TARGETS):
     loaded = sys.modules.get(module_name)
