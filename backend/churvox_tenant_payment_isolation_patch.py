@@ -85,6 +85,51 @@ async def secure_payment_account(db, user, ObjectId):
     return settings or {}, owner or {}, account_id
 
 
+def harden_accounting_payment_module():
+    try:
+        accounting = importlib.import_module("churvox_accounting_routes")
+    except Exception:
+        try:
+            accounting = importlib.import_module("backend.churvox_accounting_routes")
+        except Exception:
+            return False
+
+    class AccountingObjectId:
+        @staticmethod
+        def is_valid(value):
+            if not getattr(accounting.ObjectIdShim, "available", False):
+                return False
+            try:
+                accounting.ObjectIdShim.make(value)
+                return True
+            except Exception:
+                return False
+
+        def __new__(cls, value):
+            return accounting.ObjectIdShim.make(value)
+
+    async def accounting_owner_doc(db, user):
+        return await secure_find_owner(db, user, AccountingObjectId)
+
+    async def accounting_payment_settings(db, user, owner=None):
+        bid = business_id(user)
+        try:
+            settings = await db.payment_settings.find_one({"business_id": bid}) or {}
+        except Exception:
+            settings = {}
+        owner = owner or await accounting_owner_doc(db, user)
+        account_id = text(
+            settings.get("stripe_account_id")
+            or (owner or {}).get("stripe_account_id")
+            or (owner or {}).get("stripe_connected_account_id")
+        )
+        return settings, owner or {}, account_id
+
+    accounting._owner_doc = accounting_owner_doc
+    accounting._payment_settings = accounting_payment_settings
+    return True
+
+
 def install(_legacy_module=None):
     # Strengthen the shared tenant query and keep public API routes out of the
     # owner-data interceptor before the middleware processes any request.
@@ -110,6 +155,7 @@ def install(_legacy_module=None):
     payments.payment_account = secure_payment_account
     # Never bind a business to the first Stripe account in the platform list.
     payments.first_existing_connected_account = lambda _stripe: ""
+    harden_accounting_payment_module()
 
     for name in ("churvox_terminal_reader_patch", "backend.churvox_terminal_reader_patch"):
         terminal = sys.modules.get(name)
@@ -121,5 +167,5 @@ def install(_legacy_module=None):
 
 __all__ = [
     "VERSION", "install", "strict_business_scope", "owner_route",
-    "secure_find_owner", "secure_payment_account",
+    "secure_find_owner", "secure_payment_account", "harden_accounting_payment_module",
 ]
