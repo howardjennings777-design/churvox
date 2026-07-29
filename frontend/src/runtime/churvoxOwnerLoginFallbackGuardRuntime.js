@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const OWNER_LOGIN_PATH = "/api/auth/login";
-const SERVICE_ERROR_STATUS = 520;
+// Keep temporary owner-login failures on a standard retryable 5xx status.
+// AuthContext retries 503 responses; changing them to a custom 520 stopped
+// after the first Render failure even though the diagnostic said retryable.
+const SERVICE_ERROR_STATUS = 503;
 const OWNER_LOGIN_TIMEOUT_MS = 30000;
 const SERVICE_MESSAGE = "Churvox login is temporarily unavailable while the service restarts. Please try again shortly.";
 
