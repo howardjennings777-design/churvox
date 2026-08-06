@@ -93,6 +93,7 @@ function slug(value = "") {
 
 function roleForArea(area = "") {
   const key = String(area || "").toLowerCase();
+  if (/growth|rebook|capacity|lead|follow/.test(key)) return "Growth Coordinator";
   if (/invoice|quote|money|payment/.test(key)) return "Bookkeeper";
   if (/account|xero|myob|integration/.test(key)) return "Accountant";
   if (/staff|worker|payroll|timer/.test(key)) return "Payroll Clerk";
