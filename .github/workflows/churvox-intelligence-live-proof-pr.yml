@@ -1,0 +1,117 @@
+name: Churvox Intelligence Live Proof PR
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  prove-live-intelligence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check deployed frontend and protected backend
+        id: proof
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 - <<'PY' | tee /tmp/churvox-intelligence-live-proof.txt
+          import json
+          import re
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          site = 'https://www.churvox.com'
+          api = 'https://grassley-backend.onrender.com'
+          build = 'churvox-owner-intelligence-v1-20260714'
+          result = {
+              'success': False,
+              'frontend_http': 0,
+              'frontend_build_found': False,
+              'backend_marker_http': 0,
+              'backend_build': '',
+              'protected_summary_http': 0,
+              'attempts': 0,
+              'safety': 'Read-only proof. No account was used and no business data was created or changed.',
+          }
+
+          def read(url, timeout=30):
+              request = urllib.request.Request(url, headers={'User-Agent': 'Churvox-Live-Proof/1.0', 'Cache-Control': 'no-cache'})
+              try:
+                  with urllib.request.urlopen(request, timeout=timeout) as response:
+                      return response.status, response.read().decode('utf-8', 'replace')
+              except urllib.error.HTTPError as error:
+                  return error.code, error.read().decode('utf-8', 'replace')
+
+          for attempt in range(1, 31):
+              result['attempts'] = attempt
+              marker_status, marker_text = read(f'{api}/api/owner-intelligence/marker?proof={int(time.time())}')
+              result['backend_marker_http'] = marker_status
+              try:
+                  result['backend_build'] = str(json.loads(marker_text).get('build') or '')
+              except Exception:
+                  result['backend_build'] = ''
+
+              summary_status, _ = read(f'{api}/api/owner-intelligence/summary?proof={int(time.time())}')
+              result['protected_summary_http'] = summary_status
+
+              site_status, html = read(f'{site}/?proof={int(time.time())}')
+              result['frontend_http'] = site_status
+              scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', html, re.I)
+              found = build in html
+              checked = []
+              for src in scripts:
+                  url = urllib.parse.urljoin(site, src)
+                  status, javascript = read(url)
+                  checked.append({'url': url, 'status': status, 'bytes': len(javascript)})
+                  if build in javascript or ('Money Left Behind' in javascript and 'What Happens If?' in javascript):
+                      found = True
+              result['frontend_build_found'] = found
+              result['frontend_scripts_checked'] = checked
+              result['success'] = bool(site_status == 200 and found and marker_status == 200 and result['backend_build'] == build and summary_status in (401, 403))
+              if result['success']:
+                  break
+              time.sleep(20)
+
+          print(json.dumps(result, indent=2, sort_keys=True))
+          raise SystemExit(0 if result['success'] else 1)
+          PY
+
+      - name: Upload exact proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-intelligence-live-proof-${{ github.run_id }}
+          path: /tmp/churvox-intelligence-live-proof.txt
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Comment on release PR
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          PROOF_OUTCOME: ${{ steps.proof.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            let output = '';
+            try { output = fs.readFileSync('/tmp/churvox-intelligence-live-proof.txt', 'utf8'); } catch {}
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 680,
+              body: `### Churvox Intelligence live proof\n\nOutcome: **${process.env.PROOF_OUTCOME}**\n\n\`\`\`json\n${output.slice(-12000)}\n\`\`\``
+            });
+
+      - name: Fail if live deployment is not proven
+        if: steps.proof.outcome != 'success'
+        run: exit 1
