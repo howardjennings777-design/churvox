@@ -1,5 +1,6 @@
 name: Churvox access pages proof
 
+# Temporary PR trigger used only to prove the production build.
 on:
   push:
     branches: [main]
