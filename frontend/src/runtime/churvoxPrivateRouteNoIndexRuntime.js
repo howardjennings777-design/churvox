@@ -46,11 +46,27 @@ const INDEXABLE_PATHS = new Set([
   '/privacy',
   '/terms',
   '/refunds-cancellations',
+  '/tradie-software-nz',
+  '/job-management-software-australia',
 ]);
 
 function normalizedPath() {
   const path = String(window.location.pathname || '/').replace(/\/+$/, '') || '/';
   return path;
+}
+
+function normalizeStaleCacheUrl() {
+  try {
+    const path = normalizedPath();
+    const url = new URL(window.location.href);
+    if (path !== '/' || !url.searchParams.has('cache-fixed')) return;
+    url.searchParams.delete('cache-fixed');
+    const query = url.searchParams.toString();
+    const next = `/${query ? `?${query}` : ''}${url.hash || ''}`;
+    window.history.replaceState(window.history.state, '', next);
+  } catch {
+    // Canonical metadata below still points crawlers at the clean URL.
+  }
 }
 
 function isPrivate(path) {
@@ -80,6 +96,7 @@ function canonical() {
 }
 
 function applySearchPolicy() {
+  normalizeStaleCacheUrl();
   const path = normalizedPath();
   const privateRoute = isPrivate(path);
   meta('robots').setAttribute('content', privateRoute ? 'noindex, nofollow, noarchive, nosnippet' : 'index, follow, max-image-preview:large');
@@ -89,7 +106,7 @@ function applySearchPolicy() {
   if (privateRoute) {
     canonicalNode.removeAttribute('href');
   } else {
-    canonicalNode.setAttribute('href', `${window.location.origin}${path}`);
+    canonicalNode.setAttribute('href', `${window.location.origin}${path === '/' ? '/' : `${path}/`}`);
   }
 }
 
