@@ -42,7 +42,7 @@ test('regional and commercial landing pages are crawlable without JavaScript', a
   await expect(page).toHaveTitle('Service business software Australia | Churvox');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Service business software Australia');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.churvox.com/service-business-software-australia/');
-  await expect(page.getByText(/owner review and approval/i).first()).toBeVisible();
+  await expect(page.getByText(/owner review before important actions/i).first()).toBeVisible();
 
   await context.close();
 });
