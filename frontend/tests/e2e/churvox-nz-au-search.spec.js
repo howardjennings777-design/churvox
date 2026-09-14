@@ -38,6 +38,12 @@ test('regional and commercial landing pages are crawlable without JavaScript', a
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Job management software Australia');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.churvox.com/job-management-software-australia/');
 
+  await page.goto(`${root}/service-business-software-australia/`);
+  await expect(page).toHaveTitle('Service business software Australia | Churvox');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Service business software Australia');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.churvox.com/service-business-software-australia/');
+  await expect(page.getByText(/owner review before important actions/i).first()).toBeVisible();
+
   await context.close();
 });
 
@@ -50,5 +56,6 @@ test('sitemap prioritises regional commercial pages and excludes account-entry r
   expect(xml).toContain('https://www.churvox.com/tradie-software-nz/');
   expect(xml).toContain('https://www.churvox.com/industries/australia/');
   expect(xml).toContain('https://www.churvox.com/job-management-software-australia/');
+  expect(xml).toContain('https://www.churvox.com/service-business-software-australia/');
   expect(xml).not.toContain('https://www.churvox.com/signup/');
 });

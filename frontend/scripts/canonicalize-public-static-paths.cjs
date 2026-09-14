@@ -27,6 +27,7 @@ const PUBLIC_PATHS = [
   '/tradie-software-nz',
   '/industries/australia',
   '/job-management-software-australia',
+  '/service-business-software-australia',
   '/industries/lawn-care',
   '/industries/landscaping',
   '/industries/cleaning',
