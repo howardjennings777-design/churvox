@@ -6,6 +6,7 @@ primary_region = "syd"
 
 [env]
   FRONTEND_URL = "https://www.churvox.com"
+  BACKEND_PUBLIC_URL = "https://churvox-backend.fly.dev"
 
 [http_service]
   internal_port = 8080
