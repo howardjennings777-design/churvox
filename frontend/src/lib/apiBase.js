@@ -81,6 +81,13 @@ function configuredBackend() {
   );
 }
 
+function useSameOriginApi() {
+  const env = typeof process !== "undefined" && process.env ? process.env : {};
+  return ["1", "true", "yes", "on"].includes(
+    String(env.REACT_APP_SAME_ORIGIN_API || "").trim().toLowerCase()
+  );
+}
+
 function isLocalFrontendHost(host = "") {
   const cleanHost = String(host || "").trim().toLowerCase();
   return ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(cleanHost);
@@ -94,11 +101,12 @@ function isChurvoxProductionHost(host = "") {
 function resolveApiBase() {
   const configured = configuredBackend();
   if (typeof window !== "undefined") {
-    // The public Render frontend does not own a production /api proxy. Sending
-    // auth to www.churvox.com/api returns the website fallback as HTTP 200,
-    // which looks successful but contains no user or token. Production browser
-    // traffic must use the real backend origin; local previews retain their
-    // same-origin development proxy.
+    // Fly's frontend owns a real same-origin /api proxy. The flag lets the same
+    // build work on the temporary *.fly.dev hostname and on www.churvox.com
+    // after DNS cutover, without opening temporary CORS origins on the backend.
+    if (useSameOriginApi()) return clean(window.location.origin);
+
+    // The existing Render frontend does not own a production /api proxy.
     if (isChurvoxProductionHost(window.location.hostname)) return configured || PRODUCTION_BACKEND;
     if (isLocalFrontendHost(window.location.hostname)) return clean(window.location.origin);
   }
